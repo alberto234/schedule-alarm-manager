@@ -1,4 +1,4 @@
-schedule-event-manager
+ScheduleAlarmManager
 ======================
 
-A mobile platform library to manage schedule events, e.g., on between 9 AM an 5 PM daily. Everyday at 9 AM an "on" event will fire, and at  5 PM an "off" event will fire.
+Android and iOS library to manage alarms based on schedules, e.g., On between 9 AM an 5 PM daily. Everyday at 9 AM an "on" alarm will trigger, and at 5 PM an "off" alarm will trigge
