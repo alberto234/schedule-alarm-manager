@@ -10,6 +10,15 @@
             android:name="com.scalior.schedulealarmmanager.ShowSchedules"
             android:label="@string/app_name" >
         </activity>
+
+        <receiver
+            android:name="com.scalior.schedulealarmmanager.SAMReceiver"
+            android:enabled="true"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="com.scalior.schedulealarmmanager.ALARM_TRIGGER" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

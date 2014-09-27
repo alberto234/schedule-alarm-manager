@@ -6,7 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.scalior.schedulealarmmanager.SAMNotification;
 import com.scalior.schedulealarmmanager.model.Event;
+import com.scalior.schedulealarmmanager.model.SAMNotificationImpl;
 import com.scalior.schedulealarmmanager.model.Schedule;
 
 import java.util.ArrayList;
@@ -57,7 +59,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
     private static final String TABLE_EVENT_CREATE = "create table " +
             TABLE_EVENT + " (" +
             EVENT_ID + " integer primary key autoincrement, " +
-            EVENT_SCHEDULE_ID + " integer not null, " +
+            EVENT_SCHEDULE_ID + " integer references " + TABLE_SCHEDULE + " on delete cascade, " +
             EVENT_ALARM_TIME + " datetime not null, " +
             EVENT_STATE + " text not null);";
 
@@ -88,6 +90,16 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 
     }
 
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        if (!db.isReadOnly()) {
+            // Enable foreign key constraints
+            db.execSQL("PRAGMA foreign_keys=ON;");
+        }
+    }
+
+
     /**
      * Description:
      * Method to get the list of events that are due
@@ -95,43 +107,54 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
      * @param cutoffTime All events that happen at or before this time will be returned
      * @return The list of events that have are due, or null if none is due
      */
-    public List<Event> getExpiredEvents(Calendar cutoffTime) {
+    public List<SAMNotificationImpl> getExpiredEvents(Calendar cutoffTime) {
 
-        String[] columns = {EVENT_ID, EVENT_SCHEDULE_ID, EVENT_ALARM_TIME, EVENT_STATE};
-        StringBuilder selection = new StringBuilder();
+        String rawSQL = "SELECT " + EVENT_ID + " , " + EVENT_SCHEDULE_ID + ", " + EVENT_ALARM_TIME +
+                        ", " + EVENT_STATE + ", " + SCHEDULE_START_TIME + ", " + SCHEDULE_DURATION +
+                        ", " + SCHEDULE_REPEAT_TYPE + ", " + SCHEDULE_TAG +
+                        " FROM " + TABLE_EVENT + " INNER JOIN " + TABLE_SCHEDULE +
+                        " ON " + EVENT_SCHEDULE_ID + " = " + TABLE_SCHEDULE + "." + SCHEDULE_ID +
+                        " WHERE " + EVENT_ALARM_TIME + " <= " + (cutoffTime.getTimeInMillis() / 1000);
 
-        // Note: Given that the Android adjusts alarm triggers so that they are more efficient
+        // Note on the where clause:
+        // Given that the Android adjusts alarm triggers so that they are more efficient
         // alarms are not going to be exact. We need to account for drifts.
-        selection.append(EVENT_ALARM_TIME).append(" <= ")
-                .append(cutoffTime.getTimeInMillis() / 1000);
-
 
         SQLiteDatabase database = getReadableDatabase();
-        Cursor cursor = database.query(TABLE_EVENT, columns, selection.toString(),
-                null, null, null, null);
+        Cursor cursor  = database.rawQuery(rawSQL, null);
 
-        ArrayList<Event> events = null;
+        ArrayList<SAMNotificationImpl> expiredEvents = null;
 
         if (cursor.getCount() > 0) {
             cursor.moveToFirst();
 
-            events = new ArrayList<Event>();
+            expiredEvents = new ArrayList<SAMNotificationImpl>();
 
             while (!cursor.isAfterLast()) {
+                // Create the event
                 Calendar alarmTime = Calendar.getInstance();
                 alarmTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(EVENT_ALARM_TIME)) * 1000);
                 Event event = new Event(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)),
-                        alarmTime,
-                        cursor.getString(cursor.getColumnIndex(EVENT_STATE)));
+                                        alarmTime,
+                                        cursor.getString(cursor.getColumnIndex(EVENT_STATE)));
                 event.setId(cursor.getLong(cursor.getColumnIndex(EVENT_ID)));
 
-                events.add(event);
+                // Create the schedule
+                Calendar startTime = Calendar.getInstance();
+                startTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(SCHEDULE_START_TIME)) * 1000);
+                Schedule schedule = new Schedule(startTime,
+                                                 cursor.getInt(cursor.getColumnIndex(SCHEDULE_DURATION)),
+                                                 cursor.getInt(cursor.getColumnIndex(SCHEDULE_REPEAT_TYPE)),
+                                                 cursor.getString(cursor.getColumnIndex(SCHEDULE_TAG)));
+                schedule.setId(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)));
+
+                expiredEvents.add(new SAMNotificationImpl(schedule, event));
             }
         }
 
         cursor.close();
         database.close();
-        return events;
+        return expiredEvents;
     }
 
     /**
@@ -307,18 +330,34 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
      *
      */
     public boolean deleteSchedule(Schedule schedule) {
+        if (schedule != null) {
+            return deleteSchedule(schedule.getId());
+        }
+        return false;
+    }
+
+    /**
+     * Description:
+     * 		delete a schedule from the database.
+     * @param scheduleId
+     * @return boolean - true if successful, false otherwise
+     *
+     */
+    public boolean deleteSchedule(long scheduleId) {
         boolean bRet = false;
 
-        if (schedule != null) {
+        if (scheduleId > 0) {
             SQLiteDatabase database = getWritableDatabase();
 
             StringBuilder selection = new StringBuilder(SCHEDULE_ID);
-            selection.append(" = ").append(schedule.getId());
+            selection.append(" = ").append(scheduleId);
 
             int count = database.delete(TABLE_SCHEDULE,
                     selection.toString(),
                     null);
 
+            // There is a cascade to the event table, so deleting a schedule will
+            // delete all associated events
             if (count >= 1) {
                 bRet = true;
             } else {
@@ -369,5 +408,62 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
         database.close();
         return schedules;
     }
+
+    /**
+     * Description:
+     * Method to get the list of events that are due
+     *
+     * @param cutoffTime All events that happen at or before this time will be returned
+     * @return The list of events that have are due, or null if none is due
+     *
+    public List<Event> getExpiredEvents(Calendar cutoffTime) {
+
+        String rawSQL = "SELECT " + EVENT_ID + " , " + EVENT_SCHEDULE_ID + ", " + EVENT_ALARM_TIME +
+                ", " + EVENT_STATE + ", " + SCHEDULE_START_TIME + ", " + SCHEDULE_DURATION +
+                ", " + SCHEDULE_REPEAT_TYPE + ", " + SCHEDULE_TAG +
+                " FROM " + TABLE_EVENT + " INNER JOIN " + TABLE_SCHEDULE +
+                " ON " + EVENT_SCHEDULE_ID + " = " + TABLE_SCHEDULE + "." + SCHEDULE_ID +
+                " WHERE " + EVENT_ALARM_TIME + " <= " + (cutoffTime.getTimeInMillis() / 1000);
+
+        String[] columns = {EVENT_ID, EVENT_SCHEDULE_ID, EVENT_ALARM_TIME, EVENT_STATE,
+                SCHEDULE_START_TIME, SCHEDULE_DURATION, SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG};
+
+        StringBuilder selection = new StringBuilder();
+
+        // Note: Given that the Android adjusts alarm triggers so that they are more efficient
+        // alarms are not going to be exact. We need to account for drifts.
+        selection.append(EVENT_ALARM_TIME).append(" <= ")
+                .append(cutoffTime.getTimeInMillis() / 1000);
+
+
+        SQLiteDatabase database = getReadableDatabase();
+        Cursor cursor  = database.rawQuery(rawSQL, null);
+
+        Cursor cursor = database.query(TABLE_EVENT, columns, selection.toString(),
+                null, null, null, null);
+
+        ArrayList<Event> events = null;
+
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+
+            events = new ArrayList<Event>();
+
+            while (!cursor.isAfterLast()) {
+                Calendar alarmTime = Calendar.getInstance();
+                alarmTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(EVENT_ALARM_TIME)) * 1000);
+                Event event = new Event(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)),
+                        alarmTime,
+                        cursor.getString(cursor.getColumnIndex(EVENT_STATE)));
+                event.setId(cursor.getLong(cursor.getColumnIndex(EVENT_ID)));
+
+                events.add(event);
+            }
+        }
+
+        cursor.close();
+        database.close();
+        return events;
+    }*/
 
 }
