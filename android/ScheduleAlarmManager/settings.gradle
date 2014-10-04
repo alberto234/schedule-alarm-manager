@@ -1,1 +1,1 @@
-include ':ScheduleAlarmManager'
+include ':ScheduleAlarmManager', ':Sample'

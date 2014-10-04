@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Sample/Sample.iml" filepath="$PROJECT_DIR$/Sample/Sample.iml" />
       <module fileurl="file://$PROJECT_DIR$/ScheduleAlarmManager.iml" filepath="$PROJECT_DIR$/ScheduleAlarmManager.iml" />
       <module fileurl="file://$PROJECT_DIR$/ScheduleAlarmManager/ScheduleAlarmManager-ScheduleAlarmManager.iml" filepath="$PROJECT_DIR$/ScheduleAlarmManager/ScheduleAlarmManager-ScheduleAlarmManager.iml" />
     </modules>

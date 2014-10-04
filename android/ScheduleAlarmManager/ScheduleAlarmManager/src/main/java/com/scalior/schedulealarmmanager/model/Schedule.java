@@ -11,6 +11,7 @@ public class Schedule {
     private int m_duration; // In seconds
     private int m_repeatType;
     private String m_tag;
+    private String m_state;
 
     public Schedule(Calendar startTime, int duration, int repeatType, String tag) {
         m_startTime = startTime;
@@ -60,4 +61,8 @@ public class Schedule {
     public void setTag(String tag) {
         m_tag = tag;
     }
+
+    public String getState() { return m_state; }
+
+    public void setState(String state) { m_state = state; }
 }

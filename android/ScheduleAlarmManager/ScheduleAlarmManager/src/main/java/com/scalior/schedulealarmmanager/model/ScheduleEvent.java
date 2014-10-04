@@ -8,11 +8,11 @@ import java.util.Calendar;
 /**
  * Created by eyong on 9/25/14.
  */
-public class SAMNotificationImpl implements SAMNotification {
+public class ScheduleEvent implements SAMNotification {
     private Schedule m_schedule;
     private Event m_event;
 
-    public SAMNotificationImpl(Schedule schedule, Event event) {
+    public ScheduleEvent(Schedule schedule, Event event) {
         m_schedule = schedule;
         m_event = event;
     }

@@ -1,5 +1,9 @@
 package com.scalior.schedulealarmmanager;
 
+import android.util.SparseArray;
+
+import com.scalior.schedulealarmmanager.model.Schedule;
+
 import java.util.List;
 
 /**
@@ -11,10 +15,10 @@ public interface SAMCallback {
      * Description:
      * 		This is called when an alarm is triggered.
      * 	    onTrigger is not
-     * @param notificationList: A list of alarms that have expired based on this trigger
+     * @param changedSchedules: A collection of schedules that have changed based on this trigger
      *
-     * Note: onTrigger is not guaranteed to be called in the UI thread, so call runOnUIThread()
+     * Note: This method is not guaranteed to be called in the UI thread, so call runOnUIThread()
      *       if you need to update the UI
      */
-    public void onTrigger(List<SAMNotification> notificationList);
+    public void onScheduleStateChange(SparseArray<Schedule> changedSchedules);
 }
