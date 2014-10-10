@@ -14,6 +14,10 @@
         <activity
             android:name=".ScheduleTestActivity"
             android:label="@string/title_activity_schedule_test" >
+        </activity>
+        <activity
+            android:name=".WeeklySchedule"
+            android:label="@string/title_activity_weekly_schedule" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

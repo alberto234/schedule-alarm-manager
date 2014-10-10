@@ -1,14 +1,37 @@
+/* The MIT License (MIT)
+ *
+ * Copyright (c) 2014 Scalior, Inc
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Author:      Eyong Nsoesie (eyongn@scalior.com)
+ * Date:        10/05/2014
+ */
 package com.scalior.schedulealarmmanager.model;
 
-import com.scalior.schedulealarmmanager.SAMNotification;
 import com.scalior.schedulealarmmanager.SAManager;
 
 import java.util.Calendar;
 
-/**
- * Created by eyong on 9/25/14.
+/*
+ * This class holds a Schedule - Event pair
  */
-public class ScheduleEvent implements SAMNotification {
+public class ScheduleEvent {
     private Schedule m_schedule;
     private Event m_event;
 
@@ -17,38 +40,35 @@ public class ScheduleEvent implements SAMNotification {
         m_event = event;
     }
 
-    @Override
     public long getScheduleId() {
         return m_schedule.getId();
     }
 
-    @Override
     public Calendar getStartTime() {
         return m_schedule.getStartTime();
     }
 
-    @Override
     public String getTag() {
         return m_schedule.getTag();
     }
 
-    @Override
     public int getDuration() {
         return m_schedule.getDuration();
     }
 
-    @Override
     public int getRepeatType() {
         return m_schedule.getRepeatType();
     }
 
-    @Override
-    public String getState() {
+    public String getEventState() {
         return m_event.getState();
     }
 
-    @Override
-    public boolean willRepeat() {
+	public String getScheduleState() {
+		return m_schedule.getState();
+	}
+
+	public boolean willRepeat() {
         // Enhancement. Logic can be more complicated in case we implement schedules that repeat
         // for a specific number of times e.g. 5 times.
         return m_schedule.getRepeatType() != SAManager.REPEAT_TYPE_NONE;

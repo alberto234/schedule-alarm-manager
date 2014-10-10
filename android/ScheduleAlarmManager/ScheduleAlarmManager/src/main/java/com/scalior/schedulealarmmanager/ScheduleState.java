@@ -22,24 +22,19 @@
  * Author:      Eyong Nsoesie (eyongn@scalior.com)
  * Date:        10/05/2014
  */
-
-
 package com.scalior.schedulealarmmanager;
 
-import android.util.SparseArray;
+import java.util.Calendar;
 
 /**
- * Callback interface to receive alarm events.
+ * The interface is used to provide details about a schedule's state to the user
  */
-public interface SAMCallback {
-    /**
-     * Description:
-     * 		This is called when an alarm is triggered.
-     * 	    onTrigger is not
-     * @param changedSchedules: A collection of schedules that have changed based on this trigger
-     *
-     * Note: This method is not guaranteed to be called in the UI thread, so call runOnUIThread()
-     *       if you need to update the UI
-     */
-    public void onScheduleStateChange(SparseArray<ScheduleState> changedSchedules);
+public interface ScheduleState {
+	public long getScheduleId();
+	public Calendar getStartTime();
+	public int getDuration();
+	public int getRepeatType();
+	public String getTag();
+	public String getState();
+	public boolean isDisabled();
 }

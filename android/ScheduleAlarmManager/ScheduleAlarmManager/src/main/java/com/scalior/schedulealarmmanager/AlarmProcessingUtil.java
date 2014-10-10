@@ -1,3 +1,28 @@
+/* The MIT License (MIT)
+ *
+ * Copyright (c) 2014 Scalior, Inc
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Author:      Eyong Nsoesie (eyongn@scalior.com)
+ * Date:        10/05/2014
+ */
+
 package com.scalior.schedulealarmmanager;
 
 import android.app.AlarmManager;
@@ -9,13 +34,14 @@ import android.util.SparseArray;
 import com.scalior.schedulealarmmanager.database.SAMSQLiteHelper;
 import com.scalior.schedulealarmmanager.model.Event;
 import com.scalior.schedulealarmmanager.model.ScheduleEvent;
-import com.scalior.schedulealarmmanager.model.Schedule;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 
 /**
- * Created by eyong on 9/26/14.
+ * This is a utility singleton that processes the schedules to update events and schedule alarms.
  */
 public class AlarmProcessingUtil {
 
@@ -24,6 +50,7 @@ public class AlarmProcessingUtil {
     public static final int MINUTE_MS       = 60 * SECOND_MS;
     public static final int HOUR_MS         = 60 * MINUTE_MS;
     public static final int DAY_MS          = 24 * HOUR_MS;
+    public static final int WEEK_MS         =  7 * DAY_MS;
 
     private static AlarmProcessingUtil m_instance;
     private static final String ACTION_ALARM_TRIGGER     = "com.scalior.schedulealarmmanager.ALARM_TRIGGER";
@@ -31,6 +58,8 @@ public class AlarmProcessingUtil {
     private Context m_context;
     private SAMCallback m_samCallback;
     private SAMSQLiteHelper m_dbHelper;
+	private boolean m_invokeCallback;
+	private int m_suspendCallbackCount;
 
     public static AlarmProcessingUtil getInstance(Context context) {
         if (m_instance == null) {
@@ -47,6 +76,7 @@ public class AlarmProcessingUtil {
         m_context = context;
         m_samCallback = null;
         m_dbHelper = SAMSQLiteHelper.getInstance(m_context);
+	    m_invokeCallback = true;
     }
 
 
@@ -59,14 +89,66 @@ public class AlarmProcessingUtil {
         m_samCallback = samCallback;
     }
 
+	/**
+	 * Description:
+	 *  Method to update the states of all schedules.
+	 *  If the m_samCallback has been provided, it shall be called with a list of all
+	 *  schedules that have changed.
+	 */
+    public void updateScheduleStates() {
+        SparseArray<ScheduleState> scheduleChangedMap = new SparseArray<ScheduleState>();
+	    SparseArray<ScheduleState> scheduleNotChangedMap = new SparseArray<ScheduleState>();
+
+	    long currTimeMillis = Calendar.getInstance().getTimeInMillis();
+
+        List<ScheduleEvent> scheduleEvents = m_dbHelper.getScheduleEvents();
+        if (scheduleEvents != null) {
+            for (ScheduleEvent scheduleEvent : scheduleEvents) {
+	            // If we have previously visited this schedule and it wasn't changed, skip
+	            if (scheduleNotChangedMap.get((int)scheduleEvent.getScheduleId()) != null) {
+		            continue;
+	            }
+
+	            // Update any expired events
+                Event event = scheduleEvent.getEvent();
+	            if (event.getAlarmTime().getTimeInMillis() <= currTimeMillis) {
+		            event.setAlarmTime(getNextAlarmTime(event.getAlarmTime(), scheduleEvent.getRepeatType()));
+		            m_dbHelper.addOrUpdateEvent(event);
+	            }
+
+                if (scheduleChangedMap.get((int) (scheduleEvent.getScheduleId())) == null) {
+	                String prevState = scheduleEvent.getScheduleState();
+	                String currState = getCurrentState(event,
+										                scheduleEvent.getRepeatType(),
+										                scheduleEvent.getDuration());
+
+	                if (currState.equals(prevState)) {
+		                scheduleNotChangedMap.put((int)scheduleEvent.getScheduleId(), scheduleEvent.getSchedule());
+	                } else {
+		                scheduleEvent.getSchedule().setState(currState);
+		                m_dbHelper.addOrUpdateSchedule(scheduleEvent.getSchedule());
+		                scheduleChangedMap.put((int) (scheduleEvent.getScheduleId()), scheduleEvent.getSchedule());
+	                }
+                }
+            }
+        }
+
+        setAlarmForEvent(m_dbHelper.getNextEvent());
+
+        // Return a list of schedules that changed
+        if (m_invokeCallback && m_samCallback != null) {
+            m_samCallback.onScheduleStateChange(scheduleChangedMap);
+        }
+    }
+
     /**
      * Description:
      *  Method to update the states of all schedules.
      *  If the m_samCallback has been provided, it shall be called with a list of all
      *  schedules that have changed.
      */
-    public void updateScheduleStates() {
-        SparseArray<Schedule> scheduleMap = new SparseArray<Schedule>();
+    /*public void updateScheduleStates() {
+        SparseArray<ScheduleState> scheduleMap = new SparseArray<ScheduleState>();
 
         List<ScheduleEvent> expiredEvents = m_dbHelper.getExpiredEvents(Calendar.getInstance());
         if (expiredEvents != null) {
@@ -89,10 +171,10 @@ public class AlarmProcessingUtil {
         setAlarmForEvent(m_dbHelper.getNextEvent());
 
         // Return a list of schedules that changed
-        if (m_samCallback != null) {
+        if (m_invokeCallback && m_samCallback != null) {
             m_samCallback.onScheduleStateChange(scheduleMap);
         }
-    }
+    } */
 
 
     /*
@@ -134,10 +216,11 @@ public class AlarmProcessingUtil {
     private String getCurrentState(Event event, int repeatType, int duration) {
         String currState = SAManager.STATE_ON; // Assume on
 
-        Calendar currTime = Calendar.getInstance();
+        long currTimeMillis = Calendar.getInstance().getTimeInMillis();
         if (event.getState().equals(SAManager.STATE_OFF)) {
-            if ((event.getAlarmTime().getTimeInMillis() - currTime.getTimeInMillis()) >
-                    duration * MINUTE_MS) {
+	        long diff = event.getAlarmTime().getTimeInMillis() - currTimeMillis;
+
+            if (diff <= 0 || diff > duration * MINUTE_MS) {
                 currState = SAManager.STATE_OFF;
             }
         } else if (event.getState().equals(SAManager.STATE_ON)) {
@@ -164,8 +247,7 @@ public class AlarmProcessingUtil {
                     break;
             }
 
-            if ((prevStartTime.getTimeInMillis() + duration * MINUTE_MS) >
-                    currTime.getTimeInMillis()) {
+	        if ((currTimeMillis - prevStartTime.getTimeInMillis()) >= duration * MINUTE_MS) {
                 currState = SAManager.STATE_OFF;
             }
         }
@@ -183,6 +265,10 @@ public class AlarmProcessingUtil {
             return;
         }
 
+        // For debugging purposes
+        DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+        String date = dateFormat.format(event.getAlarmTime().getTime());
+
         AlarmManager alarmMan = (AlarmManager)m_context.getSystemService(Context.ALARM_SERVICE);
         PendingIntent alarmTriggerPendingIntent =
                 PendingIntent.getBroadcast(m_context, 0, new Intent(ACTION_ALARM_TRIGGER), 0);
@@ -194,42 +280,33 @@ public class AlarmProcessingUtil {
 
     }
 
-    /*
-    public static List<SAMNotification> processAlarmTrigger(Context context) {
-        List<SAMNotification> notificationList = null; // For output
+	/**
+	 * Description:
+	 * 		Suspend callbacks. This is useful when adding multiple schedules
+	 */
+	public void suspendCallbacks() {
+		if (m_suspendCallbackCount <= 0) {
+			m_invokeCallback = false;
+			m_suspendCallbackCount = 1;
+		} else {
+			m_suspendCallbackCount++;
+		}
+	}
 
-        SAManager manager = SAManager.getInstance(context);
-        SAMSQLiteHelper dbHelper = SAMSQLiteHelper.getInstance(context);
+	/**
+	 * Description:
+	 * 		Resume callbacks. Undo the suspension of callbacks
+	 */
+	public void resumeCallbacks() {
+		if (m_suspendCallbackCount > 0) {
+			m_suspendCallbackCount--;
+		}
+		if (m_suspendCallbackCount == 0) {
+			m_invokeCallback = true;
+		}
+	}
 
-        List<ScheduleEvent> expiredEvents = dbHelper.getExpiredEvents(Calendar.getInstance());
-        // Update all expired events to their next scheduled time.
-        if (expiredEvents != null && expiredEvents.size() > 0) {
-            notificationList = new ArrayList<SAMNotification>();
-
-            for (ScheduleEvent expiredEvent: expiredEvents) {
-                adjustToNextAlarmTime(expiredEvent.getEvent().getAlarmTime(),
-                        expiredEvent.getRepeatType());
-                dbHelper.addOrUpdateEvent(expiredEvent.getEvent());
-
-                notificationList.add(expiredEvent);
-            }
-        }
-        return notificationList;
-    }
-
-
-    public static void setAlarmForEvent(Context context, Event event) {
-        AlarmManager alarmMan = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-        PendingIntent alarmTriggerPendingIntent =
-                PendingIntent.getBroadcast(context, 0, new Intent(ACTION_ALARM_TRIGGER), 0);
-
-        // Set the alarm here
-        alarmMan.set(AlarmManager.RTC_WAKEUP,
-                event.getAlarmTime().getTimeInMillis(),
-                alarmTriggerPendingIntent);
-
-    }
-
+	/*
     public static void suspendAlarms(Context context) {
         AlarmManager alarmMan = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
         PendingIntent alarmTriggerPendingIntent =

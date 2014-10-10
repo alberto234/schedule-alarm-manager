@@ -14,7 +14,7 @@ import android.widget.Toast;
 
 import com.scalior.schedulealarmmanager.SAMCallback;
 import com.scalior.schedulealarmmanager.SAManager;
-import com.scalior.schedulealarmmanager.model.Schedule;
+import com.scalior.schedulealarmmanager.ScheduleState;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -37,7 +37,7 @@ public class ScheduleTestActivity extends FragmentActivity {
         m_ignoreTrigger = true;
         m_scheduleMgr = SAManager.getInstance(this);
         m_scheduleMgr.setCallback(new SAMCallback() {
-              public void onScheduleStateChange(SparseArray<Schedule> changedSchedules) {
+              public void onScheduleStateChange(SparseArray<ScheduleState> changedSchedules) {
                   if (!m_ignoreTrigger) {
                       Toast.makeText(ScheduleTestActivity.this, "Alarm Fired", Toast.LENGTH_LONG).show();
                   }
@@ -68,13 +68,12 @@ public class ScheduleTestActivity extends FragmentActivity {
                 // manager library
                 Calendar fromTime = (Calendar) m_fromTime.getTag();
                 Calendar toTime = (Calendar) m_toTime.getTag();
-                long duration = toTime.getTimeInMillis() - fromTime.getTimeInMillis();
-                duration = (duration / (60 * 1000)) + 1;
+                long duration = m_scheduleMgr.getDuration(fromTime, toTime, SAManager.REPEAT_TYPE_DAILY);
 
-                List<Schedule> scheduleStates = m_scheduleMgr.getScheduleStates("TestSchedule");
+                List<ScheduleState> scheduleStates = m_scheduleMgr.getScheduleStates("TestSchedule");
                 if (scheduleStates != null && scheduleStates.size() > 0) {
                     // In this application, the tag is a unique identifier.
-                    m_scheduleMgr.updateSchedule(scheduleStates.get(0).getId(),
+                    m_scheduleMgr.updateSchedule(scheduleStates.get(0).getScheduleId(),
                             fromTime,
                             (int) duration);
                 } else {
@@ -84,8 +83,6 @@ public class ScheduleTestActivity extends FragmentActivity {
                             SAManager.REPEAT_TYPE_DAILY,
                             "TestSchedule");
                 }
-
-
             }
         });
 
@@ -145,10 +142,10 @@ public class ScheduleTestActivity extends FragmentActivity {
     }
 
     private void initializeScheduleViews() {
-        List<Schedule> scheduleStates = m_scheduleMgr.getScheduleStates(null);
+        List<ScheduleState> scheduleStates = m_scheduleMgr.getScheduleStates(null);
         if (scheduleStates != null && scheduleStates.size() > 0) {
             // Positive logic
-            for (Schedule schedule : scheduleStates) {
+            for (ScheduleState schedule : scheduleStates) {
                 if (schedule.getTag().equals("TestSchedule")) {
                     Calendar tempTime = schedule.getStartTime();
                     setTextAndTagOnTimeView(m_fromTime, tempTime);

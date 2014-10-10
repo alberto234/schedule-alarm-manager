@@ -19,6 +19,15 @@
                 <action android:name="com.scalior.schedulealarmmanager.ALARM_TRIGGER" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name="com.scalior.schedulealarmmanager.MyActivity"
+            android:label="@string/title_activity_my" >
+        </activity>
+        <activity
+            android:name="com.scalior.schedulealarmmanager.WeeklySchedule"
+            android:label="@string/title_activity_weekly_schedule" >
+        </activity>
     </application>
 
 </manifest>

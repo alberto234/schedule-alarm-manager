@@ -46,6 +46,7 @@ public class TimePreference extends DialogPreference {
         super.onBindDialogView(v);
         picker.setCurrentHour(calendar.get(Calendar.HOUR_OF_DAY));
         picker.setCurrentMinute(calendar.get(Calendar.MINUTE));
+	    picker.setIs24HourView(DateFormat.is24HourFormat(getContext()));
     }
 
     @Override
