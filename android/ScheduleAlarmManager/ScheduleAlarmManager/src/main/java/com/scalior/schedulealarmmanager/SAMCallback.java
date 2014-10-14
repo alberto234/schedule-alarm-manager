@@ -28,6 +28,8 @@ package com.scalior.schedulealarmmanager;
 
 import android.util.SparseArray;
 
+import java.util.Calendar;
+
 /**
  * Callback interface to receive alarm events.
  */

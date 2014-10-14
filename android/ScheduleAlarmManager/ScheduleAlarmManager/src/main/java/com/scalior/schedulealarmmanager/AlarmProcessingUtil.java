@@ -33,7 +33,7 @@ import android.util.SparseArray;
 
 import com.scalior.schedulealarmmanager.database.SAMSQLiteHelper;
 import com.scalior.schedulealarmmanager.model.Event;
-import com.scalior.schedulealarmmanager.model.ScheduleEvent;
+import com.scalior.schedulealarmmanager.modelholder.ScheduleEvent;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -61,6 +61,8 @@ public class AlarmProcessingUtil {
 	private boolean m_invokeCallback;
 	private int m_suspendCallbackCount;
 
+	private ScheduleEvent m_nextScheduleEvent;
+
     public static AlarmProcessingUtil getInstance(Context context) {
         if (m_instance == null) {
             m_instance = new AlarmProcessingUtil(context);
@@ -77,6 +79,7 @@ public class AlarmProcessingUtil {
         m_samCallback = null;
         m_dbHelper = SAMSQLiteHelper.getInstance(m_context);
 	    m_invokeCallback = true;
+	    m_nextScheduleEvent = null;
     }
 
 
@@ -133,7 +136,8 @@ public class AlarmProcessingUtil {
             }
         }
 
-        setAlarmForEvent(m_dbHelper.getNextEvent());
+	    m_nextScheduleEvent = m_dbHelper.getNextEvent();
+        setAlarmForEvent(m_nextScheduleEvent);
 
         // Return a list of schedules that changed
         if (m_invokeCallback && m_samCallback != null) {
@@ -141,7 +145,33 @@ public class AlarmProcessingUtil {
         }
     }
 
-    /**
+	/**
+	 * Description:
+	 *  Method to get the schedule for the next alarm
+	 *
+\	 */
+	public ScheduleState getScheduleForNextAlarm() {
+		if (m_nextScheduleEvent != null) {
+			return m_nextScheduleEvent.getSchedule();
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Description:
+	 *  Method to get the time for the next alarm
+	 *
+	 */
+	public Calendar getTimeForNextAlarm() {
+		if (m_nextScheduleEvent != null) {
+			return m_nextScheduleEvent.getEvent().getAlarmTime();
+		} else {
+			return null;
+		}
+	}
+
+	/**
      * Description:
      *  Method to update the states of all schedules.
      *  If the m_samCallback has been provided, it shall be called with a list of all
@@ -213,7 +243,7 @@ public class AlarmProcessingUtil {
     /*
      * Get the current state of an event given the schedule's repeat type and duration
      */
-    private String getCurrentState(Event event, int repeatType, int duration) {
+    public String getCurrentState(Event event, int repeatType, int duration) {
         String currState = SAManager.STATE_ON; // Assume on
 
         long currTimeMillis = Calendar.getInstance().getTimeInMillis();
@@ -260,14 +290,14 @@ public class AlarmProcessingUtil {
      * Helper method to schedule an alarm for an event.
      * This uses the Android system's AlarmManager
      */
-    private void setAlarmForEvent(Event event) {
-        if (event == null) {
+    private void setAlarmForEvent(ScheduleEvent scheduleEvent) {
+        if (scheduleEvent == null) {
             return;
         }
 
         // For debugging purposes
         DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-        String date = dateFormat.format(event.getAlarmTime().getTime());
+        String date = dateFormat.format(scheduleEvent.getEvent().getAlarmTime().getTime());
 
         AlarmManager alarmMan = (AlarmManager)m_context.getSystemService(Context.ALARM_SERVICE);
         PendingIntent alarmTriggerPendingIntent =
@@ -275,7 +305,7 @@ public class AlarmProcessingUtil {
 
         // Set the alarm here
         alarmMan.set(AlarmManager.RTC_WAKEUP,
-                event.getAlarmTime().getTimeInMillis(),
+                scheduleEvent.getEvent().getAlarmTime().getTimeInMillis(),
                 alarmTriggerPendingIntent);
 
     }

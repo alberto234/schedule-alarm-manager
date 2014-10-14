@@ -25,7 +25,10 @@
 
 package com.scalior.schedulealarmmanager.model;
 
+import android.content.Context;
+
 import com.scalior.schedulealarmmanager.ScheduleState;
+import com.scalior.schedulealarmmanager.database.SAMSQLiteHelper;
 
 import java.util.Calendar;
 
@@ -40,6 +43,8 @@ public class Schedule implements ScheduleState {
     private String m_tag;
     private String m_state;
 	private boolean m_disabled;
+	private Long m_groupId;
+	private String m_groupTag;
 
     public Schedule(Calendar startTime, int duration, int repeatType, String tag) {
         m_startTime = startTime;
@@ -48,6 +53,8 @@ public class Schedule implements ScheduleState {
         m_tag = tag;
         m_id = 0;
 	    m_disabled = false;
+	    m_groupId = null;
+	    m_groupTag = null;
     }
 
 
@@ -87,10 +94,22 @@ public class Schedule implements ScheduleState {
 		return m_disabled;
 	}
 
+	@Override
+	public String getGroupTag(Context context) {
+		if (m_groupTag == null && m_groupId != null && m_groupId > 0) {
+			m_groupTag = SAMSQLiteHelper.getInstance(context).getScheduleGroupById(m_groupId).getTag();
+		}
+		return m_groupTag;
+	}
+
 	// Other getters and setters
 	public long getId() {
         return m_id;
     }
+
+	public Long getGroupId() {
+		return m_groupId;
+	}
 
     public void setId(long id) {
         m_id = id;
@@ -118,5 +137,9 @@ public class Schedule implements ScheduleState {
 
 	public void setDisabled(boolean disabled) {
 		m_disabled = disabled;
+	}
+
+	public void setGroupId(Long groupId) {
+		m_groupId = groupId;
 	}
 }

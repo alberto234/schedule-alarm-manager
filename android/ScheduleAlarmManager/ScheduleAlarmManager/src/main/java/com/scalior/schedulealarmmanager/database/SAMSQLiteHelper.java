@@ -31,10 +31,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.scalior.schedulealarmmanager.ScheduleState;
 import com.scalior.schedulealarmmanager.model.Event;
-import com.scalior.schedulealarmmanager.model.ScheduleEvent;
+import com.scalior.schedulealarmmanager.modelholder.ScheduleAndEventsToAdd;
+import com.scalior.schedulealarmmanager.modelholder.ScheduleEvent;
 import com.scalior.schedulealarmmanager.model.Schedule;
+import com.scalior.schedulealarmmanager.model.ScheduleGroup;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -59,7 +60,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 
     // Database information
     private static final String DATABASE_NAME = "scheduleeventmanager.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 5;
 
     // Tables:
     //		Database Creation ID:
@@ -71,7 +72,18 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
             TABLE_DBCREATION + " (" +
             DBCREATION_UUID + " text not null);";
 
-    //		Schedule
+	//		Schedule group
+	public static final String TABLE_SCHEDULEGROUP = "schedulegroup";
+	public static final String SCHEDULEGROUP_ID = "_id";
+	public static final String SCHEDULEGROUP_TAG = "tag";
+	public static final String SCHEDULEGROUP_ENABLED_FL = "enabled";
+	private static final String TABLE_SCHEDULEGROUP_CREATE = "create table " +
+			TABLE_SCHEDULEGROUP + " (" +
+			SCHEDULEGROUP_ID + " integer primary key autoincrement, " +
+			SCHEDULEGROUP_TAG + " text not null, " +
+			SCHEDULEGROUP_ENABLED_FL + " boolean not null);";
+
+	//		Schedule
     public static final String TABLE_SCHEDULE = "schedule";
     public static final String SCHEDULE_ID = "_id";
     public static final String SCHEDULE_START_TIME = "starttime";
@@ -80,6 +92,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
     public static final String SCHEDULE_TAG = "tag";
     public static final String SCHEDULE_STATE = "schedule_state";
 	public static final String SCHEDULE_DISABLE_FL = "disabled";
+	public static final String SCHEDULE_GROUP_ID = "groupid";
     private static final String TABLE_SCHEDULE_CREATE = "create table " +
             TABLE_SCHEDULE + " (" +
             SCHEDULE_ID + " integer primary key autoincrement, " +
@@ -88,7 +101,8 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
             SCHEDULE_DURATION + " integer not null, " +
             SCHEDULE_TAG + " text not null, " +
             SCHEDULE_STATE + " text, " +
-		    SCHEDULE_DISABLE_FL + " boolean);";
+		    SCHEDULE_DISABLE_FL + " boolean, " +
+		    SCHEDULE_GROUP_ID + " integer);";
 
     //		Event
     public static final String TABLE_EVENT = "event";
@@ -111,7 +125,8 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase database) {
         database.execSQL(TABLE_DBCREATION_CREATE);
-        database.execSQL(TABLE_SCHEDULE_CREATE);
+	    database.execSQL(TABLE_SCHEDULEGROUP_CREATE);
+	    database.execSQL(TABLE_SCHEDULE_CREATE);
         database.execSQL(TABLE_EVENT_CREATE);
 
         // Get the unique database creation id.
@@ -126,6 +141,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldversion, int newversion) {
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_EVENT);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_SCHEDULE);
+	    sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_SCHEDULEGROUP);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_DBCREATION);
 
         onCreate(sqLiteDatabase);
@@ -153,7 +169,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
         String rawSQL = "SELECT " + TABLE_EVENT + "." + EVENT_ID + " , " + EVENT_SCHEDULE_ID +
                         ", " + EVENT_ALARM_TIME + ", " + EVENT_STATE + ", " + SCHEDULE_START_TIME +
                         ", " + SCHEDULE_DURATION + ", " + SCHEDULE_REPEAT_TYPE + ", " + SCHEDULE_TAG +
-                        ", " +  SCHEDULE_STATE + ", " + SCHEDULE_DISABLE_FL +
+                        ", " +  SCHEDULE_STATE + ", " + SCHEDULE_DISABLE_FL + ", " + SCHEDULE_GROUP_ID +
                         " FROM " + TABLE_EVENT + " INNER JOIN " + TABLE_SCHEDULE +
                         " ON " + EVENT_SCHEDULE_ID + " = " + TABLE_SCHEDULE + "." + SCHEDULE_ID +
                         " WHERE " + EVENT_ALARM_TIME + " <= " + (cutoffTime.getTimeInMillis() / 1000);
@@ -190,6 +206,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
                                                  cursor.getString(cursor.getColumnIndex(SCHEDULE_TAG)));
                 schedule.setId(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)));
                 schedule.setState(cursor.getString(cursor.getColumnIndex(SCHEDULE_STATE)));
+	            schedule.setGroupId(cursor.getLong(cursor.getColumnIndex(SCHEDULE_GROUP_ID)));
 
                 expiredEvents.add(new ScheduleEvent(schedule, event));
 
@@ -213,7 +230,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 		String rawSQL = "SELECT " + TABLE_EVENT + "." + EVENT_ID + " , " + EVENT_SCHEDULE_ID +
 				", " + EVENT_ALARM_TIME + ", " + EVENT_STATE + ", " + SCHEDULE_START_TIME +
 				", " + SCHEDULE_DURATION + ", " + SCHEDULE_REPEAT_TYPE + ", " + SCHEDULE_TAG +
-				", " +  SCHEDULE_STATE + ", " + SCHEDULE_DISABLE_FL +
+				", " +  SCHEDULE_STATE + ", " + SCHEDULE_DISABLE_FL + ", " + SCHEDULE_GROUP_ID +
 				" FROM " + TABLE_EVENT + " INNER JOIN " + TABLE_SCHEDULE +
 				" ON " + EVENT_SCHEDULE_ID + " = " + TABLE_SCHEDULE + "." + SCHEDULE_ID;
 
@@ -245,6 +262,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 						cursor.getString(cursor.getColumnIndex(SCHEDULE_TAG)));
 				schedule.setId(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)));
 				schedule.setState(cursor.getString(cursor.getColumnIndex(SCHEDULE_STATE)));
+				schedule.setGroupId(cursor.getLong(cursor.getColumnIndex(SCHEDULE_GROUP_ID)));
 
 				scheduleEvents.add(new ScheduleEvent(schedule, event));
 
@@ -261,35 +279,89 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
      * Description:
      * This returns the next event to be scheduled given the current time
      *
-     * @return One event, or null if no other event occurs in the future
+     * @return One ScheduleEvent, or null if no other event occurs in the future
      */
-    public Event getNextEvent() {
-        Calendar currTime = Calendar.getInstance();
-        String[] columns = {EVENT_ID, EVENT_SCHEDULE_ID, EVENT_ALARM_TIME, EVENT_STATE};
-        String selection = EVENT_ALARM_TIME + " >= " + (currTime.getTimeInMillis() / 1000);
+    public ScheduleEvent getNextEvent() {
+	    Calendar currTime = Calendar.getInstance();
+
+	    String rawSQL = "SELECT " + TABLE_EVENT + "." + EVENT_ID + " , " + EVENT_SCHEDULE_ID +
+			    ", " + EVENT_ALARM_TIME + ", " + EVENT_STATE + ", " + SCHEDULE_START_TIME +
+			    ", " + SCHEDULE_DURATION + ", " + SCHEDULE_REPEAT_TYPE + ", " + SCHEDULE_TAG +
+			    ", " +  SCHEDULE_STATE + ", " + SCHEDULE_DISABLE_FL + ", " + SCHEDULE_GROUP_ID +
+			    " FROM " + TABLE_EVENT + " INNER JOIN " + TABLE_SCHEDULE +
+			    " ON " + EVENT_SCHEDULE_ID + " = " + TABLE_SCHEDULE + "." + SCHEDULE_ID +
+			    " WHERE " + EVENT_ALARM_TIME + " >= " + (currTime.getTimeInMillis() / 1000) +
+			    " ORDER BY " + EVENT_ALARM_TIME +
+			    " LIMIT 1;";
 
         SQLiteDatabase database = getReadableDatabase();
-        Cursor cursor = database.query(TABLE_EVENT, columns, selection,
-                                        null, null, null,
-                                        EVENT_ALARM_TIME, "1");
+	    Cursor cursor  = database.rawQuery(rawSQL, null);
 
-        Event event = null;
+	    ScheduleEvent scheduleEvent = null;
 
-        if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
+	    if (cursor.getCount() > 0) {
+		    cursor.moveToFirst();
 
-            Calendar alarmTime = Calendar.getInstance();
-            alarmTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(EVENT_ALARM_TIME)) * 1000);
-            event = new Event(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)),
-                    alarmTime,
-                    cursor.getString(cursor.getColumnIndex(EVENT_STATE)));
-            event.setId(cursor.getLong(cursor.getColumnIndex(EVENT_ID)));
-        }
+		    // Create the event
+		    Calendar alarmTime = Calendar.getInstance();
+		    alarmTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(EVENT_ALARM_TIME)) * 1000);
+		    Event event = new Event(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)),
+				    alarmTime,
+				    cursor.getString(cursor.getColumnIndex(EVENT_STATE)));
+		    event.setId(cursor.getLong(cursor.getColumnIndex(EVENT_ID)));
 
-        cursor.close();
-        database.close();
-        return event;
+		    // Create the schedule
+		    Calendar startTime = Calendar.getInstance();
+		    startTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(SCHEDULE_START_TIME)) * 1000);
+		    Schedule schedule = new Schedule(startTime,
+				    cursor.getInt(cursor.getColumnIndex(SCHEDULE_DURATION)),
+				    cursor.getInt(cursor.getColumnIndex(SCHEDULE_REPEAT_TYPE)),
+				    cursor.getString(cursor.getColumnIndex(SCHEDULE_TAG)));
+		    schedule.setId(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)));
+		    schedule.setState(cursor.getString(cursor.getColumnIndex(SCHEDULE_STATE)));
+		    schedule.setGroupId(cursor.getLong(cursor.getColumnIndex(SCHEDULE_GROUP_ID)));
+
+		    scheduleEvent = new ScheduleEvent(schedule, event);
+	    }
+
+	    cursor.close();
+	    database.close();
+	    return scheduleEvent;
     }
+
+	/**
+	 * Description:
+	 * This returns the next event to be scheduled given the current time
+	 *
+	 * @return One event, or null if no other event occurs in the future
+	 */
+	/*public Event getNextEvent() {
+		Calendar currTime = Calendar.getInstance();
+		String[] columns = {EVENT_ID, EVENT_SCHEDULE_ID, EVENT_ALARM_TIME, EVENT_STATE};
+		String selection = EVENT_ALARM_TIME + " >= " + (currTime.getTimeInMillis() / 1000);
+
+		SQLiteDatabase database = getReadableDatabase();
+		Cursor cursor = database.query(TABLE_EVENT, columns, selection,
+				null, null, null,
+				EVENT_ALARM_TIME, "1");
+
+		Event event = null;
+
+		if (cursor.getCount() > 0) {
+			cursor.moveToFirst();
+
+			Calendar alarmTime = Calendar.getInstance();
+			alarmTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(EVENT_ALARM_TIME)) * 1000);
+			event = new Event(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)),
+					alarmTime,
+					cursor.getString(cursor.getColumnIndex(EVENT_STATE)));
+			event.setId(cursor.getLong(cursor.getColumnIndex(EVENT_ID)));
+		}
+
+		cursor.close();
+		database.close();
+		return event;
+	}*/
 
     /**
      * Description:
@@ -315,7 +387,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
                     null, null, null, null);
 
             if (cursor.getCount() == 1) {
-                cursor.moveToFirst();
+	            cursor.moveToFirst();
 
                 // Update fields that change.
                 ContentValues values = new ContentValues();
@@ -433,6 +505,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
                 values.put(SCHEDULE_TAG, schedule.getTag());
                 values.put(SCHEDULE_STATE, schedule.getState());
 	            values.put(SCHEDULE_DISABLE_FL, schedule.isDisabled());
+	            values.put(SCHEDULE_GROUP_ID, schedule.getGroupId());
                 retVal = database.insert(TABLE_SCHEDULE, null, values);
                 schedule.setId(retVal);
             }
@@ -513,7 +586,8 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
     public List<Schedule> getAllSchedules() {
 
         String[] columns = {SCHEDULE_ID, SCHEDULE_START_TIME, SCHEDULE_DURATION,
-                            SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG, SCHEDULE_STATE, SCHEDULE_DISABLE_FL};
+                            SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG, SCHEDULE_STATE,
+		                    SCHEDULE_DISABLE_FL, SCHEDULE_GROUP_ID};
 
         SQLiteDatabase database = getReadableDatabase();
         Cursor cursor = database.query(TABLE_SCHEDULE, columns, null, null, null, null, null);
@@ -540,7 +614,8 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 
 
         String[] columns = {SCHEDULE_ID, SCHEDULE_START_TIME, SCHEDULE_DURATION,
-                SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG, SCHEDULE_STATE, SCHEDULE_DISABLE_FL};
+			                SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG, SCHEDULE_STATE, SCHEDULE_DISABLE_FL,
+			                SCHEDULE_GROUP_ID};
 
         String selection = SCHEDULE_TAG + " = ?";
         String[] selectionArgs = {tag};
@@ -557,6 +632,35 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 
 	/**
 	 * Description:
+	 * Method to get a list of schedules that belong to a particular group
+	 * @param groupId: The group Id to match.
+	 * @return The list of schedules, or null if there is no match
+	 */
+	public List<Schedule> getSchedulesByGroupId(long groupId) {
+
+		if (groupId <= 0) {
+			return null;
+		}
+
+
+		String[] columns = {SCHEDULE_ID, SCHEDULE_START_TIME, SCHEDULE_DURATION,
+				SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG, SCHEDULE_STATE, SCHEDULE_DISABLE_FL,
+				SCHEDULE_GROUP_ID};
+
+		String selection = SCHEDULE_GROUP_ID + " = " + groupId;
+
+		SQLiteDatabase database = getReadableDatabase();
+		Cursor cursor = database.query(TABLE_SCHEDULE, columns, selection, null, null, null, null);
+
+		List<Schedule> schedules = extractSchedulesFromCursor(cursor);
+
+		cursor.close();
+		database.close();
+		return schedules;
+	}
+
+	/**
+	 * Description:
 	 * 		Return a schedule given its id
 	 * @param scheduleId - the schedule id of the schedule to return
 	 * @return Schedule - the schedule object if found, null otherwise
@@ -568,7 +672,8 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 			SQLiteDatabase database = getReadableDatabase();
 
 			String[] columns = {SCHEDULE_ID, SCHEDULE_START_TIME, SCHEDULE_DURATION,
-					SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG, SCHEDULE_STATE, SCHEDULE_DISABLE_FL};
+								SCHEDULE_REPEAT_TYPE, SCHEDULE_TAG, SCHEDULE_STATE,
+								SCHEDULE_DISABLE_FL, SCHEDULE_GROUP_ID};
 			String selection = SCHEDULE_ID + " = " + scheduleId;
 
 			Cursor cursor = database.query(TABLE_SCHEDULE,
@@ -590,7 +695,338 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 	}
 
 
-    private List<Schedule> extractSchedulesFromCursor(Cursor cursor) {
+	/**
+	 * Description:
+	 * 		Add a new schedule group
+	 * @param group - the schedule group to add
+	 * @return long - the database id if successful, -1 otherwise
+	 *
+	 */
+	public long addOrUpdateScheduleGroup(ScheduleGroup group) {
+		long retVal = -1;
+
+		if (group != null) {
+			SQLiteDatabase database = getWritableDatabase();
+
+			// First check if this exists in the database.
+			String[] columns = {SCHEDULEGROUP_ID};
+			String selection = SCHEDULEGROUP_ID + " = " + group.getId();
+
+			Cursor cursor = database.query(TABLE_SCHEDULEGROUP,
+					columns,
+					selection,
+					null, null, null, null);
+
+			if (cursor.getCount() == 1) {
+				// Update fields that change.
+				ContentValues values = new ContentValues();
+				values.put(SCHEDULEGROUP_ENABLED_FL, group.isEnabled());
+				database.update(TABLE_SCHEDULEGROUP, values, selection, null);
+				retVal = group.getId();
+			} else if (cursor.getCount() == 0) {
+				ContentValues values = new ContentValues();
+				values.put(SCHEDULEGROUP_TAG, group.getTag());
+				values.put(SCHEDULEGROUP_ENABLED_FL, group.isEnabled());
+				retVal = database.insert(TABLE_SCHEDULEGROUP, null, values);
+				group.setId(retVal);
+			}
+			cursor.close();
+			database.close();
+		}
+
+		return retVal;
+	}
+
+
+
+	/**
+	 * Description:
+	 * 		Retrieve a schedule group by id
+	 * @param id - the id of the schedule group
+	 * @return ScheduleGroup - the schedule group to retrieve
+	 */
+	public ScheduleGroup getScheduleGroupById(long id) {
+		ScheduleGroup group = null;
+		if (id > 0) {
+			SQLiteDatabase database = getReadableDatabase();
+
+			String[] columns = {SCHEDULEGROUP_ID, SCHEDULEGROUP_TAG, SCHEDULEGROUP_ENABLED_FL};
+			String selection = SCHEDULEGROUP_ID + " = " + id;
+
+			Cursor cursor = database.query(TABLE_SCHEDULEGROUP,
+					columns,
+					selection.toString(),
+					null, null, null, null);
+
+			if (cursor.getCount() > 0) {
+				cursor.moveToFirst();
+				group = new ScheduleGroup(cursor.getString(cursor.getColumnIndex(SCHEDULEGROUP_TAG)),
+						cursor.getInt(cursor.getColumnIndex(SCHEDULEGROUP_ENABLED_FL)) == 1);
+				group.setId(id);
+			}
+			cursor.close();
+			database.close();
+		}
+
+		return group;
+	}
+
+	/**
+	 * Description:
+	 * 		Retrieve a schedule group by tag
+	 * @param tag - the tag assigned to the schedule group
+	 * @return ScheduleGroup - the schedule group to retrieve
+	 */
+	public ScheduleGroup getScheduleGroupByTag(String tag) {
+		ScheduleGroup group = null;
+		if (tag != null && !tag.isEmpty()) {
+			String[] columns = {SCHEDULEGROUP_ID, SCHEDULEGROUP_TAG, SCHEDULEGROUP_ENABLED_FL};
+			String selection = SCHEDULEGROUP_TAG + " = ?";
+			String[] selectionArgs = {tag};
+
+			SQLiteDatabase database = getReadableDatabase();
+			Cursor cursor = database.query(TABLE_SCHEDULEGROUP,
+					columns, selection, selectionArgs,
+					null, null, null, null);
+
+			if (cursor.getCount() > 0) {
+				cursor.moveToFirst();
+				group = new ScheduleGroup(cursor.getString(cursor.getColumnIndex(SCHEDULEGROUP_TAG)),
+						cursor.getInt(cursor.getColumnIndex(SCHEDULEGROUP_ENABLED_FL)) == 1);
+				group.setId(cursor.getLong(cursor.getColumnIndex(SCHEDULEGROUP_ID)));
+			}
+			cursor.close();
+			database.close();
+		}
+
+		return group;
+	}
+
+	/**
+	 * Description:
+	 * 		Delete a schedule group given its id
+	 * @param id - the id of the group to delete
+	 * @return ScheduleGroup - the schedule group to retrieve
+	 */
+	public boolean deleteGroupById(long id) {
+		boolean bRet = false;
+
+		if (id > 0) {
+			SQLiteDatabase database = getWritableDatabase();
+
+			String selection = SCHEDULEGROUP_ID + " = " + id;
+
+			int count = database.delete(TABLE_SCHEDULEGROUP, selection, null);
+
+			bRet = count >= 1;
+
+			database.close();
+		}
+
+		return bRet;
+	}
+
+	/**
+	 * Description:
+	 * 		Add a schedule and its associated events to the database
+	 * 	    This happens in a transaction
+	 * @param schedule - the schedule to add
+	 * @param startAndStopEvents - the events to add
+	 * @return long - the schedule id if everything was added, or -1
+	 *
+	 */
+	public long addScheduleAndEvents(Schedule schedule, List<Event> startAndStopEvents, boolean newSchedule) {
+		long scheduleId = -1;
+
+		SQLiteDatabase database = getWritableDatabase();
+		database.beginTransaction();
+		try {
+			if (newSchedule) {
+				// Add the schedule
+				ContentValues values = new ContentValues();
+				values.put(SCHEDULE_START_TIME, schedule.getStartTime().getTimeInMillis() / 1000);
+				values.put(SCHEDULE_DURATION, schedule.getDuration());
+				values.put(SCHEDULE_REPEAT_TYPE, schedule.getRepeatType());
+				values.put(SCHEDULE_TAG, schedule.getTag());
+				values.put(SCHEDULE_STATE, schedule.getState());
+				values.put(SCHEDULE_DISABLE_FL, schedule.isDisabled());
+				values.put(SCHEDULE_GROUP_ID, schedule.getGroupId());
+				scheduleId = database.insert(TABLE_SCHEDULE, null, values);
+				schedule.setId(scheduleId);
+			} else {
+				// Update fields that change.
+				String selection = SCHEDULE_ID + " = " + schedule.getId();
+
+				ContentValues values = new ContentValues();
+				values.put(SCHEDULE_START_TIME, schedule.getStartTime().getTimeInMillis() / 1000);
+				values.put(SCHEDULE_DURATION, schedule.getDuration());
+				values.put(SCHEDULE_STATE, schedule.getState());
+				values.put(SCHEDULE_DISABLE_FL, schedule.isDisabled());
+				int count = database.update(TABLE_SCHEDULE, values, selection, null);
+				if (count == 1) {
+					scheduleId = schedule.getId();
+				}
+			}
+
+			if (scheduleId <= 0) {
+				return scheduleId;
+			}
+
+			// Add events
+			long eventId = -1;
+			for (int i = 0; i < 2; i++) {
+				Event event = startAndStopEvents.get(i);
+				event.setScheduleID(scheduleId);
+
+				ContentValues values = new ContentValues();
+				values.put(EVENT_SCHEDULE_ID, event.getScheduleID());
+				values.put(EVENT_ALARM_TIME, event.getAlarmTime().getTimeInMillis() / 1000);
+				values.put(EVENT_STATE, event.getState());
+				eventId = database.insert(TABLE_EVENT, null, values);
+				if (eventId <= 0) {
+					break;
+				}
+				event.setId(eventId);
+			}
+
+			if (eventId > 0) {
+				database.setTransactionSuccessful();
+			} else {
+				scheduleId = -1;
+			}
+		} finally {
+			database.endTransaction();
+		}
+
+		return scheduleId;
+	}
+
+	/**
+	 * Description:
+	 * 		delete all events that belong to the schedule group identified by the group tag.
+	 * @param groupTag - The group tag of the schedule group
+	 * @return boolean - true if successful, false otherwise
+	 *
+	 */
+	public boolean deleteEventsByGroupTag(String groupTag) {
+		boolean bRet = false;
+
+		ScheduleGroup group = getScheduleGroupByTag(groupTag);
+		if (group != null) {
+			String scheduleIdSQL = "SELECT " + SCHEDULE_ID +
+					" FROM " + TABLE_SCHEDULE +
+					" WHERE " + SCHEDULE_GROUP_ID + " = " + group.getId();
+
+			String selection = EVENT_SCHEDULE_ID + " IN (" + scheduleIdSQL + ")";
+
+			String rawSQL = "DELETE FROM " + TABLE_EVENT +
+					" WHERE " + selection + ";";
+
+			SQLiteDatabase database = getWritableDatabase();
+			//database.execSQL(rawSQL);
+
+			database.delete(TABLE_EVENT, selection, null);
+			database.close();
+			bRet = true;
+		}
+
+		return bRet;
+	}
+
+
+	/**
+	 * Description:
+	 * 		Add a list of schedules and their associated events to the database
+	 * 	    This happens in a transaction
+	 * @param schedulesAndEventsToAdd - a holder of the schedule and its events
+	 * @return true if all were successful, false if there was at least one failure.
+	 *          Upon failure, the transaction is rolled back.
+	 *          Check each ScheduleAndEventsToAdd object for which failed.
+	 */
+	public boolean addMultipleScheduleAndEvents(List<ScheduleAndEventsToAdd> schedulesAndEventsToAdd) {
+		boolean bRet = true;
+
+		if (schedulesAndEventsToAdd == null || schedulesAndEventsToAdd.size() == 0) {
+			return false;
+		}
+
+		SQLiteDatabase database = getWritableDatabase();
+		database.beginTransaction();
+		try {
+			for (ScheduleAndEventsToAdd scheduleAndEvents: schedulesAndEventsToAdd) {
+				Schedule schedule = scheduleAndEvents.m_schedule;
+				if (scheduleAndEvents.m_newSchedule) {
+					// Add the schedule
+					ContentValues values = new ContentValues();
+					values.put(SCHEDULE_START_TIME, schedule.getStartTime().getTimeInMillis() / 1000);
+					values.put(SCHEDULE_DURATION, schedule.getDuration());
+					values.put(SCHEDULE_REPEAT_TYPE, schedule.getRepeatType());
+					values.put(SCHEDULE_TAG, schedule.getTag());
+					values.put(SCHEDULE_STATE, schedule.getState());
+					values.put(SCHEDULE_DISABLE_FL, schedule.isDisabled());
+					values.put(SCHEDULE_GROUP_ID, schedule.getGroupId());
+					long scheduleId = database.insert(TABLE_SCHEDULE, null, values);
+					if (scheduleId > 0) {
+						schedule.setId(scheduleId);
+						scheduleAndEvents.m_addedScheduleId = scheduleId;
+					} else {
+						bRet = false;
+						break;
+					}
+				} else {
+					// Update fields that change.
+					String selection = SCHEDULE_ID + " = " + schedule.getId();
+
+					ContentValues values = new ContentValues();
+					values.put(SCHEDULE_START_TIME, schedule.getStartTime().getTimeInMillis() / 1000);
+					values.put(SCHEDULE_DURATION, schedule.getDuration());
+					values.put(SCHEDULE_STATE, schedule.getState());
+					values.put(SCHEDULE_DISABLE_FL, schedule.isDisabled());
+					int count = database.update(TABLE_SCHEDULE, values, selection, null);
+					if (count == 1) {
+						scheduleAndEvents.m_addedScheduleId = schedule.getId();
+					} else {
+						bRet = false;
+						break;
+					}
+				}
+
+				// Add events
+				long eventId = -1;
+				for (int i = 0; i < 2; i++) {
+					Event event = scheduleAndEvents.m_events.get(i);
+					event.setScheduleID(scheduleAndEvents.m_addedScheduleId);
+
+					ContentValues values = new ContentValues();
+					values.put(EVENT_SCHEDULE_ID, event.getScheduleID());
+					values.put(EVENT_ALARM_TIME, event.getAlarmTime().getTimeInMillis() / 1000);
+					values.put(EVENT_STATE, event.getState());
+					eventId = database.insert(TABLE_EVENT, null, values);
+					if (eventId <= 0) {
+						bRet = false;
+						break;
+					}
+					event.setId(eventId);
+				}
+
+				if (!bRet) {
+					break;
+				}
+			}
+
+			// Commit the transaction
+			if (bRet) {
+				database.setTransactionSuccessful();
+			}
+		} finally {
+			database.endTransaction();
+		}
+
+		return bRet;
+	}
+
+
+	private List<Schedule> extractSchedulesFromCursor(Cursor cursor) {
         ArrayList<Schedule> schedules = null;
 
         if (cursor.getCount() > 0) {
@@ -608,6 +1044,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
                 schedule.setId(cursor.getLong(cursor.getColumnIndex(SCHEDULE_ID)));
                 schedule.setState(cursor.getString(cursor.getColumnIndex(SCHEDULE_STATE)));
 	            schedule.setDisabled(cursor.getInt(cursor.getColumnIndex(SCHEDULE_DISABLE_FL)) == 1);
+	            schedule.setGroupId(cursor.getLong(cursor.getColumnIndex(SCHEDULE_GROUP_ID)));
 
                 schedules.add(schedule);
                 cursor.moveToNext();

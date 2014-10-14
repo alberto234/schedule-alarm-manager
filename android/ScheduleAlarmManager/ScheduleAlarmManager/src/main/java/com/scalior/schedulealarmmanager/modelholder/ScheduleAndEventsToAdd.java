@@ -20,24 +20,32 @@
  * SOFTWARE.
  *
  * Author:      Eyong Nsoesie (eyongn@scalior.com)
- * Date:        10/05/2014
+ * Date:        10/13/2014
  */
-package com.scalior.schedulealarmmanager;
 
-import android.content.Context;
+package com.scalior.schedulealarmmanager.modelholder;
 
-import java.util.Calendar;
+import com.scalior.schedulealarmmanager.model.Event;
+import com.scalior.schedulealarmmanager.model.Schedule;
+
+import java.util.List;
 
 /**
- * The interface is used to provide details about a schedule's state to the user
+ * This is a holder which holds a schedule and its corresponding events to be added to the
+ * database.
+ * Upon success of the add operation, the m_addedScheduleId field has the id of the schedule.
+ * If the add fails, the m_addedScheduleId is -1
  */
-public interface ScheduleState {
-	public long getScheduleId();
-	public Calendar getStartTime();
-	public int getDuration();
-	public int getRepeatType();
-	public String getTag();
-	public String getState();
-	public boolean isDisabled();
-	public String getGroupTag(Context context);
+public class ScheduleAndEventsToAdd {
+	public Schedule m_schedule;
+	public List<Event> m_events;
+	public boolean m_newSchedule;
+	public long m_addedScheduleId;
+
+	public ScheduleAndEventsToAdd(Schedule schedule, List<Event> events, boolean newSchedule) {
+		m_schedule = schedule;
+		m_events = events;
+		m_newSchedule = newSchedule;
+		m_addedScheduleId = -1;
+	}
 }

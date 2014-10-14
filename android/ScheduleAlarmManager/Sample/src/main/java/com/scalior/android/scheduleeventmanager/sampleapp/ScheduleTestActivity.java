@@ -81,7 +81,7 @@ public class ScheduleTestActivity extends FragmentActivity {
                     m_scheduleMgr.addSchedule(fromTime,
                             (int) duration,
                             SAManager.REPEAT_TYPE_DAILY,
-                            "TestSchedule");
+                            "TestSchedule", "TestScheduleGroup");
                 }
             }
         });
@@ -165,7 +165,7 @@ public class ScheduleTestActivity extends FragmentActivity {
             m_scheduleMgr.addSchedule(tempTime,
                     duration,
                     SAManager.REPEAT_TYPE_DAILY,
-                    "TestSchedule");
+                    "TestSchedule", "TestScheduleGroup");
 
             setTextAndTagOnTimeView(m_fromTime, tempTime);
 

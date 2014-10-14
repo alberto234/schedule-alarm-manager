@@ -13,7 +13,6 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.TimePicker;
-import android.widget.Toast;
 
 import com.scalior.schedulealarmmanager.SAMCallback;
 import com.scalior.schedulealarmmanager.SAManager;
@@ -21,6 +20,7 @@ import com.scalior.schedulealarmmanager.ScheduleState;
 
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 
@@ -43,11 +43,16 @@ public class WeeklyScheduleFragment extends Fragment {
 	private static final String SATURDAY    = "SATURDAY";
 	private static final String SUNDAY      = "SUNDAY";
 
+	private static final String SCHEDULE_GROUP  = "ScheduleSet1";
+
 	private OnFragmentInteractionListener mListener;
 	private SAManager m_scheduleMgr;
 
 	private ScheduleRowViews[] m_scheduleRowViewsArray;
+	private TextView m_nextAlarmInfo;
+	private CheckBox m_suspendAllSchedulesCB;
 	private boolean m_initalizing;
+
 
 	/**
 	 * Use this factory method to create a new instance of
@@ -86,6 +91,23 @@ public class WeeklyScheduleFragment extends Fragment {
 	                         Bundle savedInstanceState) {
 		// Inflate the layout for this fragment
 		View rootView = inflater.inflate(R.layout.fragment_weekly_schedule, container, false);
+
+		m_nextAlarmInfo = (TextView)rootView.findViewById(R.id.next_alarm_info);
+		m_suspendAllSchedulesCB = (CheckBox)rootView.findViewById(R.id.sch_group_suspend);
+		m_suspendAllSchedulesCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+				boolean success = false;
+				if (checked) {
+					success = m_scheduleMgr.disableScheduleGroup(SCHEDULE_GROUP);
+				} else {
+					success = m_scheduleMgr.enableScheduleGroup(SCHEDULE_GROUP);
+				}
+				if (success) {
+					setViewsForScheduleGroupState(!checked);
+				}
+			}
+		});
 
 		// Monday
 		m_scheduleRowViewsArray[0].m_daytv = (TextView)rootView.findViewById(R.id.sch_day1);
@@ -251,6 +273,24 @@ public class WeeklyScheduleFragment extends Fragment {
 					initializeScheduleRowViews(6, schedule);
 				}
 			}
+
+			// Next alarm details
+			if (m_scheduleMgr.getTimeForNextAlarm() != null) {
+				Date alarmDate = m_scheduleMgr.getTimeForNextAlarm().getTime();
+				m_nextAlarmInfo.setText(m_scheduleMgr.getScheduleForNextAlarm().getTag() + " - " +
+						DateFormat.getDateFormat(getActivity()).format(alarmDate) + " " +
+						DateFormat.getTimeFormat(getActivity()).format(alarmDate));
+			} else {
+				m_nextAlarmInfo.setText("<None>");
+			}
+
+			boolean groupState = m_scheduleMgr.getGroupState(SCHEDULE_GROUP);
+			if (groupState) {
+				m_suspendAllSchedulesCB.setChecked(false);
+			} else {
+				m_suspendAllSchedulesCB.setChecked(true);
+			}
+			setViewsForScheduleGroupState(groupState);
 		} //else {
 			// Even after we loaded the default values, we still can't initialize the views.
 			// Throw a fatal error.
@@ -263,7 +303,9 @@ public class WeeklyScheduleFragment extends Fragment {
 
 		// Label the days in the appropriate locale
 		String[] shortWeekdays = DateFormatSymbols.getInstance().getShortWeekdays();
-		m_scheduleRowViewsArray[index].m_daytv.setText(shortWeekdays[tempTime.get(Calendar.DAY_OF_WEEK)]);
+		m_scheduleRowViewsArray[index].m_daytv
+				.setText(shortWeekdays[tempTime.get(Calendar.DAY_OF_WEEK)] +
+						"-" + m_scheduleRowViewsArray[index].m_scheduleId);
 
 		setTextAndTagOnTimeView(m_scheduleRowViewsArray[index].m_fromtv, tempTime);
 
@@ -290,7 +332,7 @@ public class WeeklyScheduleFragment extends Fragment {
 
 		for (int i = 0; i < 7; i++) {
 			m_scheduleMgr.addSchedule(startTime, duration, SAManager.REPEAT_TYPE_WEEKLY,
-					getDayTag(startTime.get(Calendar.DAY_OF_WEEK)));
+					getDayTag(startTime.get(Calendar.DAY_OF_WEEK)), "ScheduleSet1");
 			startTime.add(Calendar.DAY_OF_MONTH, 1);
 		}
 		m_scheduleMgr.resumeCallbacks();
@@ -317,6 +359,10 @@ public class WeeklyScheduleFragment extends Fragment {
 				Calendar fromTime = Calendar.getInstance();
 				Calendar toTime = Calendar.getInstance();
 
+				// Start with the schedule start time as saved
+				fromTime.setTimeInMillis(scheduleRowViews.m_startTimeMillis);
+				toTime.setTimeInMillis(scheduleRowViews.m_startTimeMillis);
+
 				fromTime.set(Calendar.HOUR_OF_DAY, (Integer)scheduleRowViews.m_fromtv.getTag(R.id.hour_tag));
 				fromTime.set(Calendar.MINUTE, (Integer)scheduleRowViews.m_fromtv.getTag(R.id.minute_tag));
 
@@ -330,6 +376,8 @@ public class WeeklyScheduleFragment extends Fragment {
 				m_scheduleMgr.updateSchedule(scheduleRowViews.m_scheduleId,
 						fromTime,
 						(int) duration);
+
+				scheduleRowViews.m_startTimeMillis = fromTime.getTimeInMillis();
 			}
 		};
 
@@ -368,8 +416,9 @@ public class WeeklyScheduleFragment extends Fragment {
 	}
 
 	private void initializeScheduleRowViews(int scheduleRowIndex, ScheduleState schedule) {
-		setFromAndToTime(scheduleRowIndex, schedule.getStartTime(), schedule.getDuration());
 		m_scheduleRowViewsArray[scheduleRowIndex].m_scheduleId = schedule.getScheduleId();
+		m_scheduleRowViewsArray[scheduleRowIndex].m_startTimeMillis = schedule.getStartTime().getTimeInMillis();
+		setFromAndToTime(scheduleRowIndex, schedule.getStartTime(), schedule.getDuration());
 		setScheduleRowEnabled(m_scheduleRowViewsArray[scheduleRowIndex].m_enablecb, !schedule.isDisabled());
 		setStateOnOrOff(scheduleRowIndex, schedule);
 	}
@@ -404,6 +453,27 @@ public class WeeklyScheduleFragment extends Fragment {
 		}
 	}
 
+	private void setViewsForScheduleGroupState(boolean enabled) {
+		for (int i = 0; i < 7; i++) {
+			if (enabled) {
+				m_scheduleRowViewsArray[i].m_enablecb.setEnabled(true);
+				m_scheduleRowViewsArray[i].m_state.setEnabled(true);
+
+				if (m_scheduleRowViewsArray[i].m_enablecb.isChecked()) {
+					m_scheduleRowViewsArray[i].m_daytv.setEnabled(true);
+					m_scheduleRowViewsArray[i].m_fromtv.setEnabled(true);
+					m_scheduleRowViewsArray[i].m_totv.setEnabled(true);
+				}
+			} else {
+				m_scheduleRowViewsArray[i].m_daytv.setEnabled(false);
+				m_scheduleRowViewsArray[i].m_enablecb.setEnabled(false);
+				m_scheduleRowViewsArray[i].m_state.setEnabled(false);
+				m_scheduleRowViewsArray[i].m_fromtv.setEnabled(false);
+				m_scheduleRowViewsArray[i].m_totv.setEnabled(false);
+			}
+		}
+	}
+
 	/**
 	 * Implementation of the SAMCallback interface
 	 */
@@ -432,6 +502,16 @@ public class WeeklyScheduleFragment extends Fragment {
 					}
 				}
 			}
+
+			// Next alarm details
+			if (m_scheduleMgr.getTimeForNextAlarm() != null) {
+				Date alarmDate = m_scheduleMgr.getTimeForNextAlarm().getTime();
+				m_nextAlarmInfo.setText(m_scheduleMgr.getScheduleForNextAlarm().getTag() + " - " +
+						DateFormat.getDateFormat(getActivity()).format(alarmDate) + " " +
+						DateFormat.getTimeFormat(getActivity()).format(alarmDate));
+			} else {
+				m_nextAlarmInfo.setText("<None>");
+			}
 		}
 	}
 
@@ -448,6 +528,7 @@ public class WeeklyScheduleFragment extends Fragment {
 
 		// Helper members
 		public long m_scheduleId;
+		public long m_startTimeMillis;
 	}
 
 

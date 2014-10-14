@@ -22,9 +22,11 @@
  * Author:      Eyong Nsoesie (eyongn@scalior.com)
  * Date:        10/05/2014
  */
-package com.scalior.schedulealarmmanager.model;
+package com.scalior.schedulealarmmanager.modelholder;
 
 import com.scalior.schedulealarmmanager.SAManager;
+import com.scalior.schedulealarmmanager.model.Event;
+import com.scalior.schedulealarmmanager.model.Schedule;
 
 import java.util.Calendar;
 

@@ -29,6 +29,8 @@ import android.content.Context;
 import com.scalior.schedulealarmmanager.database.SAMSQLiteHelper;
 import com.scalior.schedulealarmmanager.model.Event;
 import com.scalior.schedulealarmmanager.model.Schedule;
+import com.scalior.schedulealarmmanager.model.ScheduleGroup;
+import com.scalior.schedulealarmmanager.modelholder.ScheduleAndEventsToAdd;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -114,11 +116,13 @@ public class SAManager {
      * @param repeatType - One of the repeat type constants
      * @param tag - A user specific tag identifying the schedule. This will be passed back to the
      *              user when the schedule's alarm is triggered
+     * @param groupTag - A user specific tag identifying the group that this schedule belongs to.
+     *                   This can be null.
      * @return long - the added schedule's id if successful, -1 otherwise
      *                Do not count on this id to persist application restarts. Use the tag
      *                to identify schedules across restarts.
      */
-    public long addSchedule(Calendar startTime, int duration, int repeatType, String tag)
+    public long addSchedule(Calendar startTime, int duration, int repeatType, String tag, String groupTag)
                      throws IllegalArgumentException, IllegalStateException  {
         if (!m_initialized) {
             throw new IllegalStateException("SAManager not initialized");
@@ -135,47 +139,111 @@ public class SAManager {
             throw new IllegalArgumentException();
         }
 
+	    ScheduleGroup group = null;
+	    if (groupTag != null && !groupTag.isEmpty()) {
+		    group = m_dbHelper.getScheduleGroupByTag(groupTag);
+		    if (group == null) {
+			    group = new ScheduleGroup(groupTag, true);
+			    long groupId = m_dbHelper.addOrUpdateScheduleGroup(group);
+			    if (groupId <= 0) {
+				    // We should return an error here because the user expects that this
+				    // schedule belong to a group
+				    group = null;
+			    }
+		    }
+	    }
+
 	    // In order to prevent the user from modifying the time under us, we should make a copy
 	    Calendar myStartTime = Calendar.getInstance();
 	    myStartTime.setTime(startTime.getTime());
 
         Schedule schedule = new Schedule(myStartTime, duration, repeatType, tag);
-        long scheduleId = m_dbHelper.addOrUpdateSchedule(schedule);
+	    schedule.setGroupId(group.getId());
+	    List<Event> startAndStopEvents = createStartAndStopEvents(myStartTime, duration, repeatType);
+	    schedule.setState(m_alarmProcessor.getCurrentState(startAndStopEvents.get(0), repeatType, duration));
 
-        boolean eventsAdded = addEventsForSchedule(scheduleId, myStartTime, duration, repeatType);
-        m_alarmProcessor.updateScheduleStates();
+	    long scheduleId = m_dbHelper.addScheduleAndEvents(schedule, startAndStopEvents, true);
+	    if (scheduleId > 0) {
+		    m_alarmProcessor.updateScheduleStates();
+	    }
 
-        if (eventsAdded) {
-            return scheduleId;
-        } else {
-            return -1;
-        }
+	    return scheduleId;
     }
 
-    public long updateSchedule(long id, Calendar startTime, int duration) {
+	/*
+	 * Description:
+	 * 		Adds a schedule
+	 * @param startTime - When the schedule starts. It can't be more than 24 hours in the past.
+	 * @param duration - The duration of the schedule in minutes
+	 * @param repeatType - One of the repeat type constants
+	 * @param tag - A user specific tag identifying the schedule. This will be passed back to the
+	 *              user when the schedule's alarm is triggered
+	 * @return long - the added schedule's id if successful, -1 otherwise
+	 *                Do not count on this id to persist application restarts. Use the tag
+	 *                to identify schedules across restarts.
+	 */
+	/*public long addSchedule(Calendar startTime, int duration, int repeatType, String tag)
+			throws IllegalArgumentException, IllegalStateException  {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		Calendar currTime = Calendar.getInstance();
+
+		// Check for validity of parameters
+		if (duration <= 0 ||
+				((currTime.getTimeInMillis() - startTime.getTimeInMillis())
+						> AlarmProcessingUtil.DAY_MS) || // Start time shouldn't be more than 24 hours in the past
+				!isRepeatTypeValid(repeatType) ||
+				tag == null || tag.isEmpty()) {
+			throw new IllegalArgumentException();
+		}
+
+		// In order to prevent the user from modifying the time under us, we should make a copy
+		Calendar myStartTime = Calendar.getInstance();
+		myStartTime.setTime(startTime.getTime());
+
+		Schedule schedule = new Schedule(myStartTime, duration, repeatType, tag);
+
+
+		long scheduleId = m_dbHelper.addOrUpdateSchedule(schedule);
+
+		boolean eventsAdded = addEventsForSchedule(scheduleId, myStartTime, duration, repeatType);
+		m_alarmProcessor.updateScheduleStates();
+
+		if (eventsAdded) {
+			return scheduleId;
+		} else {
+			return -1;
+		}
+	}*/
+
+	public long updateSchedule(long id, Calendar startTime, int duration) {
         if (!m_initialized) {
             throw new IllegalStateException("SAManager not initialized");
         }
 
+		Schedule schedule = m_dbHelper.getScheduleById(id);
+		schedule.setStartTime(startTime);
+		schedule.setDuration(duration);
+
+		if (schedule == null) {
+			return -1;
+		}
+
         // Delete existing events
         m_dbHelper.deleteEventByScheduleId(id);
 
-        // Create dummy schedule for update.
-        // Upon success, the repeatType and the Tag are updated
-        Schedule schedule = new Schedule(startTime, duration, -1, "<Dummy>");
-        schedule.setId(id);
-        schedule.setState(null);
 
-        long scheduleId = m_dbHelper.addOrUpdateSchedule(schedule);
+		List<Event> startAndStopEvents = createStartAndStopEvents(startTime, duration, schedule.getRepeatType());
+		schedule.setState(m_alarmProcessor.getCurrentState(startAndStopEvents.get(0), schedule.getRepeatType(), duration));
 
-        boolean eventsAdded = addEventsForSchedule(scheduleId, startTime, duration, schedule.getRepeatType());
-        m_alarmProcessor.updateScheduleStates();
+		long scheduleId = m_dbHelper.addScheduleAndEvents(schedule, startAndStopEvents, false);
+		if (scheduleId > 0) {
+			m_alarmProcessor.updateScheduleStates();
+		}
 
-        if (eventsAdded) {
-            return scheduleId;
-        } else {
-            return -1;
-        }
+		return scheduleId;
     }
 
     /**
@@ -258,15 +326,19 @@ public class SAManager {
 		m_alarmProcessor.resumeCallbacks();
 
 		Schedule schedule = m_dbHelper.getScheduleById(scheduleId);
-		if (schedule != null) {
-			addEventsForSchedule(scheduleId,
-					schedule.getStartTime(),
-					schedule.getDuration(),
-					schedule.getRepeatType());
+
+		List<Event> startAndStopEvents = createStartAndStopEvents(schedule.getStartTime(),
+				schedule.getDuration(), schedule.getRepeatType());
+		schedule.setState(m_alarmProcessor.getCurrentState(startAndStopEvents.get(0),
+				schedule.getRepeatType(), schedule.getDuration()));
+
+		long updatedScheduleId = m_dbHelper.addScheduleAndEvents(schedule, startAndStopEvents, false);
+		if (updatedScheduleId > 0) {
+			m_alarmProcessor.updateScheduleStates();
+			return true;
 		}
 
-		m_alarmProcessor.updateScheduleStates();
-		return true;
+		return false;
 	}
 
 	/**
@@ -302,6 +374,117 @@ public class SAManager {
 	 */
 	public void resumeCallbacks() {
 		m_alarmProcessor.resumeCallbacks();
+	}
+
+	/**
+	 * Description:
+	 *  Method to get the schedule for the next alarm
+	 *
+	*/
+	public ScheduleState getScheduleForNextAlarm() {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+		return m_alarmProcessor.getScheduleForNextAlarm();
+	}
+
+	/**
+	 * Description:
+	 *  Method to get the time for the next alarm
+	 *
+	 */
+	public Calendar getTimeForNextAlarm() {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+		return m_alarmProcessor.getTimeForNextAlarm();
+	}
+
+	/**
+	 * Description:
+	 *     Disable all schedules that belong to the group identified by the group tag
+	 * @param groupTag - The group tag
+	 */
+	public boolean disableScheduleGroup(String groupTag) {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		if (groupTag == null || groupTag.isEmpty()) {
+			return false;
+		}
+
+		boolean retVal =  m_dbHelper.deleteEventsByGroupTag(groupTag);
+		if (retVal) {
+			ScheduleGroup group = m_dbHelper.getScheduleGroupByTag(groupTag);
+			group.setEnabled(false);
+			m_dbHelper.addOrUpdateScheduleGroup(group);
+		}
+
+		m_alarmProcessor.updateScheduleStates();
+
+		return retVal;
+	}
+
+	/**
+	 * Description:
+	 *     Enable all schedules that belong to the group identified by the group tag
+	 *     This only enables schedules with the disable flag set to false.
+	 * @param groupTag - The group tag
+	 */
+	public boolean enableScheduleGroup(String groupTag) {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		if (groupTag == null || groupTag.isEmpty()) {
+			return false;
+		}
+
+		boolean retVal = true;
+
+		List<ScheduleAndEventsToAdd> scheduleAndEventsToAdd = new ArrayList<ScheduleAndEventsToAdd>();
+		ScheduleGroup group = m_dbHelper.getScheduleGroupByTag(groupTag);
+		if (group != null) {
+			List<Schedule> schedules = m_dbHelper.getSchedulesByGroupId(group.getId());
+
+			if (schedules != null && schedules.size() > 0) {
+				for (Schedule schedule : schedules) {
+					if (!schedule.isDisabled()) {
+						List<Event> startAndStopEvents = createStartAndStopEvents(schedule.getStartTime(),
+								schedule.getDuration(), schedule.getRepeatType());
+						scheduleAndEventsToAdd.add(
+								new ScheduleAndEventsToAdd(schedule, startAndStopEvents, false));
+					}
+				}
+			}
+		}
+
+		if (scheduleAndEventsToAdd.size() > 0) {
+			retVal = m_dbHelper.addMultipleScheduleAndEvents(scheduleAndEventsToAdd);
+			if (retVal) {
+				group.setEnabled(true);
+				m_dbHelper.addOrUpdateScheduleGroup(group);
+			}
+			m_alarmProcessor.updateScheduleStates();
+		}
+
+		// If there was nothing to add given the tag, return true
+		return retVal;
+	}
+
+	/**
+	 * Description:
+	 *     Return whether this group is enabled or not given its tag
+	 * @param groupTag - The group tag
+	 */
+	public boolean getGroupState(String groupTag) {
+		ScheduleGroup group = m_dbHelper.getScheduleGroupByTag(groupTag);
+		if (group != null) {
+			return group.isEnabled();
+		} else {
+			return true;
+		}
 	}
 
 	/**
@@ -429,4 +612,26 @@ public class SAManager {
 
         return eventId > 0;
     }
+
+	private List<Event> createStartAndStopEvents(Calendar startTime, int duration, int repeatType) {
+		// Start event
+		// Adjust startTime to the next occurrence if it happens in the past
+		Calendar adjustedStartTime = Calendar.getInstance();
+		adjustedStartTime.setTime(startTime.getTime());
+		adjustToNextAlarmTime(adjustedStartTime, repeatType);
+		Event startEvent = new Event(0, adjustedStartTime, STATE_ON);
+
+		// Stop event
+		Calendar adjustedStopTime = Calendar.getInstance();
+		adjustedStopTime.setTime(startTime.getTime());
+		adjustedStopTime.add(Calendar.MINUTE, duration);
+		adjustToNextAlarmTime(adjustedStopTime, repeatType);
+		Event stopEvent = new Event(0, adjustedStopTime, STATE_OFF);
+
+		List<Event> events = new ArrayList<Event>();
+		events.add(startEvent);
+		events.add(stopEvent);
+
+		return events;
+	}
 }
