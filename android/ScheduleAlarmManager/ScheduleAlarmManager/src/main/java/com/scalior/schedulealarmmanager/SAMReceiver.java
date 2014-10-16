@@ -40,6 +40,6 @@ public class SAMReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         // The updateScheduleStates method takes care of scheduling the next event
         // as well as notifying the application of the event that occurred.
-        AlarmProcessingUtil.getInstance(context).updateScheduleStates();
+        AlarmProcessingUtil.getInstance(context).updateScheduleStates(null);
     }
 }

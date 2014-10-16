@@ -97,8 +97,10 @@ public class AlarmProcessingUtil {
 	 *  Method to update the states of all schedules.
 	 *  If the m_samCallback has been provided, it shall be called with a list of all
 	 *  schedules that have changed.
+	 *  @param changedSchedules - If there are any schedules that changed outside of expired
+	 *                            events, pass their ids here.
 	 */
-    public void updateScheduleStates() {
+    public void updateScheduleStates(SparseArray<Long> changedSchedules) {
         SparseArray<ScheduleState> scheduleChangedMap = new SparseArray<ScheduleState>();
 	    SparseArray<ScheduleState> scheduleNotChangedMap = new SparseArray<ScheduleState>();
 
@@ -108,7 +110,8 @@ public class AlarmProcessingUtil {
         if (scheduleEvents != null) {
             for (ScheduleEvent scheduleEvent : scheduleEvents) {
 	            // If we have previously visited this schedule and it wasn't changed, skip
-	            if (scheduleNotChangedMap.get((int)scheduleEvent.getScheduleId()) != null) {
+	            long scheduleId = scheduleEvent.getScheduleId();
+	            if (scheduleNotChangedMap.get((int)scheduleId) != null) {
 		            continue;
 	            }
 
@@ -119,18 +122,21 @@ public class AlarmProcessingUtil {
 		            m_dbHelper.addOrUpdateEvent(event);
 	            }
 
-                if (scheduleChangedMap.get((int) (scheduleEvent.getScheduleId())) == null) {
+                if (scheduleChangedMap.get((int)scheduleId) == null) {
 	                String prevState = scheduleEvent.getScheduleState();
 	                String currState = getCurrentState(event,
 										                scheduleEvent.getRepeatType(),
 										                scheduleEvent.getDuration());
 
-	                if (currState.equals(prevState)) {
-		                scheduleNotChangedMap.put((int)scheduleEvent.getScheduleId(), scheduleEvent.getSchedule());
+	                boolean forceNotify = (changedSchedules != null &&
+			                changedSchedules.get((int)scheduleId) != null);
+
+	                if (!forceNotify && currState.equals(prevState)) {
+			                scheduleNotChangedMap.put((int)scheduleId, scheduleEvent.getSchedule());
 	                } else {
 		                scheduleEvent.getSchedule().setState(currState);
 		                m_dbHelper.addOrUpdateSchedule(scheduleEvent.getSchedule());
-		                scheduleChangedMap.put((int) (scheduleEvent.getScheduleId()), scheduleEvent.getSchedule());
+		                scheduleChangedMap.put((int)scheduleId, scheduleEvent.getSchedule());
 	                }
                 }
             }

@@ -25,6 +25,7 @@
 package com.scalior.schedulealarmmanager;
 
 import android.content.Context;
+import android.util.SparseArray;
 
 import com.scalior.schedulealarmmanager.database.SAMSQLiteHelper;
 import com.scalior.schedulealarmmanager.model.Event;
@@ -87,7 +88,7 @@ public class SAManager {
      * @return boolean - true if successful, false other wise
      */
     public boolean init() {
-        m_alarmProcessor.updateScheduleStates();
+        m_alarmProcessor.updateScheduleStates(null);
         m_initialized = true;
         return true;
     }
@@ -164,7 +165,9 @@ public class SAManager {
 
 	    long scheduleId = m_dbHelper.addScheduleAndEvents(schedule, startAndStopEvents, true);
 	    if (scheduleId > 0) {
-		    m_alarmProcessor.updateScheduleStates();
+		    SparseArray<Long> changedSchedules = new SparseArray<Long>();
+		    changedSchedules.put((int)scheduleId, scheduleId);
+		    m_alarmProcessor.updateScheduleStates(changedSchedules);
 	    }
 
 	    return scheduleId;
@@ -224,12 +227,12 @@ public class SAManager {
         }
 
 		Schedule schedule = m_dbHelper.getScheduleById(id);
-		schedule.setStartTime(startTime);
-		schedule.setDuration(duration);
-
 		if (schedule == null) {
 			return -1;
 		}
+
+		schedule.setStartTime(startTime);
+		schedule.setDuration(duration);
 
         // Delete existing events
         m_dbHelper.deleteEventByScheduleId(id);
@@ -240,7 +243,9 @@ public class SAManager {
 
 		long scheduleId = m_dbHelper.addScheduleAndEvents(schedule, startAndStopEvents, false);
 		if (scheduleId > 0) {
-			m_alarmProcessor.updateScheduleStates();
+			SparseArray<Long> changedSchedules = new SparseArray<Long>();
+			changedSchedules.put((int)scheduleId, scheduleId);
+			m_alarmProcessor.updateScheduleStates(changedSchedules);
 		}
 
 		return scheduleId;
@@ -258,7 +263,7 @@ public class SAManager {
         }
 
         boolean deleted = m_dbHelper.deleteSchedule(scheduleId);
-        m_alarmProcessor.updateScheduleStates();
+        m_alarmProcessor.updateScheduleStates(null);
 
         return deleted;
     }
@@ -334,7 +339,9 @@ public class SAManager {
 
 		long updatedScheduleId = m_dbHelper.addScheduleAndEvents(schedule, startAndStopEvents, false);
 		if (updatedScheduleId > 0) {
-			m_alarmProcessor.updateScheduleStates();
+			SparseArray<Long> changedSchedules = new SparseArray<Long>();
+			changedSchedules.put((int)updatedScheduleId, updatedScheduleId);
+			m_alarmProcessor.updateScheduleStates(changedSchedules);
 			return true;
 		}
 
@@ -354,7 +361,9 @@ public class SAManager {
 
 		// Delete existing events
 		m_dbHelper.deleteEventByScheduleId(scheduleId);
-		m_alarmProcessor.updateScheduleStates();
+		SparseArray<Long> changedSchedules = new SparseArray<Long>();
+		changedSchedules.put((int)scheduleId, scheduleId);
+		m_alarmProcessor.updateScheduleStates(changedSchedules);
 		return true;
 	}
 
@@ -421,7 +430,7 @@ public class SAManager {
 			m_dbHelper.addOrUpdateScheduleGroup(group);
 		}
 
-		m_alarmProcessor.updateScheduleStates();
+		m_alarmProcessor.updateScheduleStates(null);
 
 		return retVal;
 	}
@@ -466,7 +475,7 @@ public class SAManager {
 				group.setEnabled(true);
 				m_dbHelper.addOrUpdateScheduleGroup(group);
 			}
-			m_alarmProcessor.updateScheduleStates();
+			m_alarmProcessor.updateScheduleStates(null);
 		}
 
 		// If there was nothing to add given the tag, return true
