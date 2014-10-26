@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.scalior.schedulalarmmanager" >
+    package="com.scalior.schedulealarmmanager"
+    android:versionCode="1"
+    android:versionName="1.0.0-beta">
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/ic_sam_launcher"
         android:label="@string/app_name" >
         <activity
             android:name="com.scalior.schedulealarmmanager.ShowSchedules"
@@ -19,15 +21,6 @@
                 <action android:name="com.scalior.schedulealarmmanager.ALARM_TRIGGER" />
             </intent-filter>
         </receiver>
-
-        <activity
-            android:name="com.scalior.schedulealarmmanager.MyActivity"
-            android:label="@string/title_activity_my" >
-        </activity>
-        <activity
-            android:name="com.scalior.schedulealarmmanager.WeeklySchedule"
-            android:label="@string/title_activity_weekly_schedule" >
-        </activity>
     </application>
 
 </manifest>
