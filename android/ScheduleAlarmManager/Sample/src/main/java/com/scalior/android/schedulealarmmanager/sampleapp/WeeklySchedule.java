@@ -1,4 +1,4 @@
-package com.scalior.android.scheduleeventmanager.sampleapp;
+package com.scalior.android.schedulealarmmanager.sampleapp;
 
 import android.app.Activity;
 import android.os.Bundle;

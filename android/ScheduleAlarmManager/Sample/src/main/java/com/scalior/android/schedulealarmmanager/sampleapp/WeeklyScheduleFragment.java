@@ -1,4 +1,4 @@
-package com.scalior.android.scheduleeventmanager.sampleapp;
+package com.scalior.android.schedulealarmmanager.sampleapp;
 
 import android.app.TimePickerDialog;
 import android.net.Uri;
@@ -9,6 +9,7 @@ import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
@@ -73,7 +74,7 @@ public class WeeklyScheduleFragment extends Fragment {
 		super.onCreate(savedInstanceState);
 
 		m_scheduleMgr = SAManager.getInstance(getActivity());
-		m_scheduleMgr.setCallback(new MySAMCallback());
+		m_scheduleMgr.setCallback(new MySAMCallback(), false);
 		m_scheduleMgr.suspendCallbacks();
 		m_scheduleMgr.init();
 
@@ -109,6 +110,18 @@ public class WeeklyScheduleFragment extends Fragment {
 			}
 		});
 
+		Button deleteGroupBtn = (Button)rootView.findViewById(R.id.delete_schedule_group);
+		deleteGroupBtn.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				m_scheduleMgr.suspendCallbacks();
+				m_scheduleMgr.deleteSchedulesByGroupTag(SCHEDULE_GROUP);
+
+				m_initalizing = true;
+				initializeScheduleViews();
+				m_initalizing = false;
+				m_scheduleMgr.resumeCallbacks();			}
+		});
 		// Monday
 		m_scheduleRowViewsArray[0].m_daytv = (TextView)rootView.findViewById(R.id.sch_day1);
 		m_scheduleRowViewsArray[0].m_fromtv = (TextView)rootView.findViewById(R.id.sch_from1);

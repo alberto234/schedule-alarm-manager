@@ -329,40 +329,6 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 	    return scheduleEvent;
     }
 
-	/**
-	 * Description:
-	 * This returns the next event to be scheduled given the current time
-	 *
-	 * @return One event, or null if no other event occurs in the future
-	 */
-	/*public Event getNextEvent() {
-		Calendar currTime = Calendar.getInstance();
-		String[] columns = {EVENT_ID, EVENT_SCHEDULE_ID, EVENT_ALARM_TIME, EVENT_STATE};
-		String selection = EVENT_ALARM_TIME + " >= " + (currTime.getTimeInMillis() / 1000);
-
-		SQLiteDatabase database = getReadableDatabase();
-		Cursor cursor = database.query(TABLE_EVENT, columns, selection,
-				null, null, null,
-				EVENT_ALARM_TIME, "1");
-
-		Event event = null;
-
-		if (cursor.getCount() > 0) {
-			cursor.moveToFirst();
-
-			Calendar alarmTime = Calendar.getInstance();
-			alarmTime.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(EVENT_ALARM_TIME)) * 1000);
-			event = new Event(cursor.getLong(cursor.getColumnIndex(EVENT_SCHEDULE_ID)),
-					alarmTime,
-					cursor.getString(cursor.getColumnIndex(EVENT_STATE)));
-			event.setId(cursor.getLong(cursor.getColumnIndex(EVENT_ID)));
-		}
-
-		cursor.close();
-		database.close();
-		return event;
-	}*/
-
     /**
      * Description:
      * 		Add a new event or update an existing event to the database
@@ -919,15 +885,15 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 
 			String selection = EVENT_SCHEDULE_ID + " IN (" + scheduleIdSQL + ")";
 
-			String rawSQL = "DELETE FROM " + TABLE_EVENT +
-					" WHERE " + selection + ";";
-
 			SQLiteDatabase database = getWritableDatabase();
-			//database.execSQL(rawSQL);
-
 			database.delete(TABLE_EVENT, selection, null);
 			database.close();
 			bRet = true;
+
+			// If we need to use a raw SQL to perform the delete
+			// String rawSQL = "DELETE FROM " + TABLE_EVENT +
+			//		" WHERE " + selection + ";";
+			// database.execSQL(rawSQL);
 		}
 
 		return bRet;
@@ -1022,10 +988,50 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 			database.endTransaction();
 		}
 
+		database.close();
 		return bRet;
 	}
 
+	/**
+	 * Description:
+	 * 		Delete all schedules that belong to the group identified by group tag
+	 * @param groupTag - The tag for the group
+	 * @return true if successful, false otherwise
+	 */
+	public boolean deleteSchedulesByGroup(String groupTag) {
+		boolean success = false;
 
+		if (groupTag != null && !groupTag.isEmpty()) {
+			SQLiteDatabase database = getWritableDatabase();
+			database.beginTransaction();
+			try {
+				// 1 - delete all schedules in the group
+				String scheduleIdSQL = "SELECT " + TABLE_SCHEDULE + "." + SCHEDULE_ID +
+						" FROM " + TABLE_SCHEDULE + " INNER JOIN " + TABLE_SCHEDULEGROUP +
+						" ON " + SCHEDULE_GROUP_ID + " = " + TABLE_SCHEDULEGROUP + "." + SCHEDULEGROUP_ID +
+						" WHERE " + TABLE_SCHEDULEGROUP + "." + SCHEDULEGROUP_TAG + " = ?";
+				String selection = TABLE_SCHEDULE + "." + SCHEDULE_ID + " IN (" + scheduleIdSQL + ")";
+				String[] selectionArgs = {groupTag};
+				database.delete(TABLE_SCHEDULE, selection, selectionArgs);
+
+				// 2 - delete the group
+				selection = SCHEDULEGROUP_TAG + " = ?";
+				database.delete(TABLE_SCHEDULEGROUP, selection, selectionArgs);
+				database.setTransactionSuccessful();
+				success = true;
+			} finally {
+				database.endTransaction();
+			}
+			database.close();
+		}
+		return success;
+	}
+
+	/**
+	 * Helper method to populate an ArrayList of schedules given a database cursor
+	 * @param cursor
+	 * @return
+	 */
 	private List<Schedule> extractSchedulesFromCursor(Cursor cursor) {
         ArrayList<Schedule> schedules = null;
 

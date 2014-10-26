@@ -83,14 +83,31 @@ public class AlarmProcessingUtil {
     }
 
 
-
-    public SAMCallback getSamCallback() {
-        return m_samCallback;
+	/**
+	 * Description:
+	 *  This method sets the callback.
+	 *
+	 *  @param samCallback - The callback instance. Once set can't be changed
+	 *  @param replace - If true, a current callback will be replaced with this one
+	 *                   If false and a callback is already set, the new callback will
+	 *                   be ignored.
+	 */
+    public void setSamCallback(SAMCallback samCallback, boolean replace) {
+	    if (replace || m_samCallback == null) {
+		    m_samCallback = samCallback;
+	    } else {
+		    throw new UnsupportedOperationException("The callback has already been set");
+	    }
     }
 
-    public void setSamCallback(SAMCallback samCallback) {
-        m_samCallback = samCallback;
-    }
+	/**
+	 * Description:
+	 *  Retrieves the callback instance.
+	 *  Note: A callback can only be set once.
+	 */
+	public SAMCallback getSamCallback() {
+		return m_samCallback;
+	}
 
 	/**
 	 * Description:
@@ -142,6 +159,17 @@ public class AlarmProcessingUtil {
             }
         }
 
+	    // Final check that all the schedules marked as changed into this method are also included
+	    // in the scheduleChangeMap being passed in the callback
+	    if (changedSchedules != null) {
+		    for (int i = 0; i < changedSchedules.size(); i++) {
+			    long scheduleId = changedSchedules.valueAt(i);
+			    if (scheduleChangedMap.get((int)scheduleId) == null) {
+					scheduleChangedMap.put((int)scheduleId, m_dbHelper.getScheduleById(scheduleId));
+			    }
+		    }
+	    }
+
 	    m_nextScheduleEvent = m_dbHelper.getNextEvent();
         setAlarmForEvent(m_nextScheduleEvent);
 
@@ -176,41 +204,6 @@ public class AlarmProcessingUtil {
 			return null;
 		}
 	}
-
-	/**
-     * Description:
-     *  Method to update the states of all schedules.
-     *  If the m_samCallback has been provided, it shall be called with a list of all
-     *  schedules that have changed.
-     */
-    /*public void updateScheduleStates() {
-        SparseArray<ScheduleState> scheduleMap = new SparseArray<ScheduleState>();
-
-        List<ScheduleEvent> expiredEvents = m_dbHelper.getExpiredEvents(Calendar.getInstance());
-        if (expiredEvents != null) {
-            for (ScheduleEvent expiredEvent : expiredEvents) {
-                Event event = expiredEvent.getEvent();
-                event.setAlarmTime(getNextAlarmTime(event.getAlarmTime(), expiredEvent.getRepeatType()));
-                m_dbHelper.addOrUpdateEvent(event);
-
-                if (scheduleMap.get((int) (expiredEvent.getScheduleId())) == null) {
-                    expiredEvent.getSchedule().setState(
-                            getCurrentState(event,
-                                    expiredEvent.getRepeatType(),
-                                    expiredEvent.getDuration()));
-                    m_dbHelper.addOrUpdateSchedule(expiredEvent.getSchedule());
-                    scheduleMap.put((int) (expiredEvent.getScheduleId()), expiredEvent.getSchedule());
-                }
-            }
-        }
-
-        setAlarmForEvent(m_dbHelper.getNextEvent());
-
-        // Return a list of schedules that changed
-        if (m_invokeCallback && m_samCallback != null) {
-            m_samCallback.onScheduleStateChange(scheduleMap);
-        }
-    } */
 
 
     /*
@@ -297,23 +290,20 @@ public class AlarmProcessingUtil {
      * This uses the Android system's AlarmManager
      */
     private void setAlarmForEvent(ScheduleEvent scheduleEvent) {
-        if (scheduleEvent == null) {
-            return;
+	    AlarmManager alarmMan = (AlarmManager) m_context.getSystemService(Context.ALARM_SERVICE);
+	    PendingIntent alarmTriggerPendingIntent =
+			    PendingIntent.getBroadcast(m_context, 0, new Intent(ACTION_ALARM_TRIGGER), 0);
+
+	    if (scheduleEvent != null) {
+		    // Set the alarm here
+		    alarmMan.set(AlarmManager.RTC_WAKEUP,
+				    scheduleEvent.getEvent().getAlarmTime().getTimeInMillis(),
+				    alarmTriggerPendingIntent);
+	    } else {
+	        // Cancel the alarm.
+	        // DEBUG: Test that there is no harm in canceling an alarm that hasn't been set
+	        alarmMan.cancel(alarmTriggerPendingIntent);
         }
-
-        // For debugging purposes
-        DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-        String date = dateFormat.format(scheduleEvent.getEvent().getAlarmTime().getTime());
-
-        AlarmManager alarmMan = (AlarmManager)m_context.getSystemService(Context.ALARM_SERVICE);
-        PendingIntent alarmTriggerPendingIntent =
-                PendingIntent.getBroadcast(m_context, 0, new Intent(ACTION_ALARM_TRIGGER), 0);
-
-        // Set the alarm here
-        alarmMan.set(AlarmManager.RTC_WAKEUP,
-                scheduleEvent.getEvent().getAlarmTime().getTimeInMillis(),
-                alarmTriggerPendingIntent);
-
     }
 
 	/**
@@ -341,13 +331,4 @@ public class AlarmProcessingUtil {
 			m_invokeCallback = true;
 		}
 	}
-
-	/*
-    public static void suspendAlarms(Context context) {
-        AlarmManager alarmMan = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-        PendingIntent alarmTriggerPendingIntent =
-                PendingIntent.getBroadcast(context, 0, new Intent(ACTION_ALARM_TRIGGER), 0);
-
-        alarmMan.cancel(alarmTriggerPendingIntent);
-    }*/
 }

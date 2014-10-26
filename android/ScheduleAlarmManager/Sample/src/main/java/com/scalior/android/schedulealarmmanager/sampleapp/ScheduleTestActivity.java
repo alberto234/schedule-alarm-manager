@@ -1,4 +1,4 @@
-package com.scalior.android.scheduleeventmanager.sampleapp;
+package com.scalior.android.schedulealarmmanager.sampleapp;
 
 import android.app.TimePickerDialog;
 import android.os.Bundle;
@@ -42,7 +42,7 @@ public class ScheduleTestActivity extends FragmentActivity {
                       Toast.makeText(ScheduleTestActivity.this, "Alarm Fired", Toast.LENGTH_LONG).show();
                   }
               }
-          });
+          }, false);
 
         m_scheduleMgr.init();
         m_ignoreTrigger = false;

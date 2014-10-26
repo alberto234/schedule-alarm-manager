@@ -3,15 +3,15 @@
     <!-- These settings headers are only used on tablets. -->
 
     <header
-        android:fragment="com.scalior.android.scheduleeventmanager.sampleapp.ScheduleActivity$GeneralPreferenceFragment"
+        android:fragment="com.scalior.android.schedulealarmmanager.sampleapp.ScheduleActivity$GeneralPreferenceFragment"
         android:title="@string/pref_header_general" />
 
     <header
-        android:fragment="com.scalior.android.scheduleeventmanager.sampleapp.ScheduleActivity$NotificationPreferenceFragment"
+        android:fragment="com.scalior.android.schedulealarmmanager.sampleapp.ScheduleActivity$NotificationPreferenceFragment"
         android:title="@string/pref_header_notifications" />
 
     <header
-        android:fragment="com.scalior.android.scheduleeventmanager.sampleapp.ScheduleActivity$DataSyncPreferenceFragment"
+        android:fragment="com.scalior.android.schedulealarmmanager.sampleapp.ScheduleActivity$DataSyncPreferenceFragment"
         android:title="@string/pref_header_data_sync" />
 
 </preference-headers>

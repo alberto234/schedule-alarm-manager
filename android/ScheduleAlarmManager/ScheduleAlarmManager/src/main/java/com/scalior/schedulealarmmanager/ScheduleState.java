@@ -39,5 +39,6 @@ public interface ScheduleState {
 	public String getTag();
 	public String getState();
 	public boolean isDisabled();
-	public String getGroupTag(Context context);
+	public String getGroupTag();
+	public boolean isGroupEnabled();
 }

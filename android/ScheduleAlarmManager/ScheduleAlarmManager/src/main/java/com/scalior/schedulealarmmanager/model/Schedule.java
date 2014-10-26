@@ -44,7 +44,7 @@ public class Schedule implements ScheduleState {
     private String m_state;
 	private boolean m_disabled;
 	private Long m_groupId;
-	private String m_groupTag;
+	private ScheduleGroup m_group;
 
     public Schedule(Calendar startTime, int duration, int repeatType, String tag) {
         m_startTime = startTime;
@@ -54,7 +54,7 @@ public class Schedule implements ScheduleState {
         m_id = 0;
 	    m_disabled = false;
 	    m_groupId = null;
-	    m_groupTag = null;
+	    m_group = null;
     }
 
 
@@ -95,11 +95,21 @@ public class Schedule implements ScheduleState {
 	}
 
 	@Override
-	public String getGroupTag(Context context) {
-		if (m_groupTag == null && m_groupId != null && m_groupId > 0) {
-			m_groupTag = SAMSQLiteHelper.getInstance(context).getScheduleGroupById(m_groupId).getTag();
+	public String getGroupTag() {
+		if (getGroup() != null) {
+			return getGroup().getTag();
 		}
-		return m_groupTag;
+		return null;
+	}
+
+	@Override
+	public boolean isGroupEnabled() {
+		if (getGroup() != null) {
+			return getGroup().isEnabled();
+		}
+
+		// If a group is not found, this is not part of a group so return true
+		return true;
 	}
 
 	// Other getters and setters
@@ -141,5 +151,15 @@ public class Schedule implements ScheduleState {
 
 	public void setGroupId(Long groupId) {
 		m_groupId = groupId;
+	}
+
+	private ScheduleGroup getGroup() {
+		// For this call, the precondition is that the SAManager class has been initialized.
+		// That being the case, the SAMSQLiteHelper singleton has also been created and it hold
+		// a valid context object. Passing in null to get an instance will be fine here.
+		if (m_group == null && m_groupId != null && m_groupId > 0) {
+			m_group = SAMSQLiteHelper.getInstance(null).getScheduleGroupById(m_groupId);
+		}
+		return m_group;
 	}
 }

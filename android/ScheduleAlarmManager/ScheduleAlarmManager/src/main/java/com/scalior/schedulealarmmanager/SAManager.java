@@ -25,6 +25,8 @@
 package com.scalior.schedulealarmmanager;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.util.SparseArray;
 
 import com.scalior.schedulealarmmanager.database.SAMSQLiteHelper;
@@ -32,10 +34,14 @@ import com.scalior.schedulealarmmanager.model.Event;
 import com.scalior.schedulealarmmanager.model.Schedule;
 import com.scalior.schedulealarmmanager.model.ScheduleGroup;
 import com.scalior.schedulealarmmanager.modelholder.ScheduleAndEventsToAdd;
+import com.scalior.schedulealarmmanager.modelholder.ScheduleEvent;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+
+//import android.content.pm.PackageInfo;
+//import android.content.pm.PackageManager.NameNotFoundException;
 
 /**
  * This class serves as an interface to manage schedule alarms.
@@ -59,6 +65,7 @@ public class SAManager {
     private boolean m_initialized;
     private SAMSQLiteHelper m_dbHelper;
     private AlarmProcessingUtil m_alarmProcessor;
+	private String m_versionName;
 
     /**
      * Description:
@@ -101,11 +108,17 @@ public class SAManager {
         return m_alarmProcessor.getSamCallback();
     }
 
-    /**
-     * Callback setter
-     */
-    public void setCallback(SAMCallback callback) {
-        m_alarmProcessor.setSamCallback(callback);
+	/**
+	 * Description:
+	 *  This method sets the callback.
+	 *
+	 *  @param callback - The callback instance. Once set can't be changed
+	 *  @param replace - If true, a current callback will be replaced with this one
+	 *                   If false and a callback is already set, the new callback will
+	 *                   be ignored.
+	 */
+    public void setCallback(SAMCallback callback, boolean replace) {
+       m_alarmProcessor.setSamCallback(callback, replace);
     }
 
 
@@ -173,53 +186,6 @@ public class SAManager {
 	    return scheduleId;
     }
 
-	/*
-	 * Description:
-	 * 		Adds a schedule
-	 * @param startTime - When the schedule starts. It can't be more than 24 hours in the past.
-	 * @param duration - The duration of the schedule in minutes
-	 * @param repeatType - One of the repeat type constants
-	 * @param tag - A user specific tag identifying the schedule. This will be passed back to the
-	 *              user when the schedule's alarm is triggered
-	 * @return long - the added schedule's id if successful, -1 otherwise
-	 *                Do not count on this id to persist application restarts. Use the tag
-	 *                to identify schedules across restarts.
-	 */
-	/*public long addSchedule(Calendar startTime, int duration, int repeatType, String tag)
-			throws IllegalArgumentException, IllegalStateException  {
-		if (!m_initialized) {
-			throw new IllegalStateException("SAManager not initialized");
-		}
-
-		Calendar currTime = Calendar.getInstance();
-
-		// Check for validity of parameters
-		if (duration <= 0 ||
-				((currTime.getTimeInMillis() - startTime.getTimeInMillis())
-						> AlarmProcessingUtil.DAY_MS) || // Start time shouldn't be more than 24 hours in the past
-				!isRepeatTypeValid(repeatType) ||
-				tag == null || tag.isEmpty()) {
-			throw new IllegalArgumentException();
-		}
-
-		// In order to prevent the user from modifying the time under us, we should make a copy
-		Calendar myStartTime = Calendar.getInstance();
-		myStartTime.setTime(startTime.getTime());
-
-		Schedule schedule = new Schedule(myStartTime, duration, repeatType, tag);
-
-
-		long scheduleId = m_dbHelper.addOrUpdateSchedule(schedule);
-
-		boolean eventsAdded = addEventsForSchedule(scheduleId, myStartTime, duration, repeatType);
-		m_alarmProcessor.updateScheduleStates();
-
-		if (eventsAdded) {
-			return scheduleId;
-		} else {
-			return -1;
-		}
-	}*/
 
 	public long updateSchedule(long id, Calendar startTime, int duration) {
         if (!m_initialized) {
@@ -253,27 +219,10 @@ public class SAManager {
 
     /**
      * Description:
-     * 		Cancels a schedule
-     * @param scheduleId - The id of the schedule to cancel.
-     * @return boolean - true if successful, false otherwise
-     */
-    public boolean cancelSchedule(long scheduleId) {
-        if (!m_initialized) {
-            throw new IllegalStateException("SAManager not initialized");
-        }
-
-        boolean deleted = m_dbHelper.deleteSchedule(scheduleId);
-        m_alarmProcessor.updateScheduleStates(null);
-
-        return deleted;
-    }
-
-    /**
-     * Description:
      * 		Gets the schedule states of the schedule(s) that match the tag
      * @param scheduleTag - The tag of the schedule for which the state is required.
      *                      If tag is null or an empty string, all known schedules are returned
-     * @return List<Schedule> - The list of schedules or null if non is found
+     * @return List<Schedule> - The list of schedules or null if none is found
      */
     public List<ScheduleState> getScheduleStates(String scheduleTag) {
         if (!m_initialized) {
@@ -300,19 +249,84 @@ public class SAManager {
     }
 
 
-    /**
+	/**
+	 * Description:
+	 * 		Gets the schedule states of the schedule(s) belonging to a group
+	 * @param groupTag - The tag of the group.
+	 *                   If tag is null or an empty string, null is returned.
+	 * @return List<Schedule> - The list of schedules or null if none is found
+	 */
+	public List<ScheduleState> getScheduleStatesByGroupTag(String groupTag) {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		List<Schedule> schedules = null;
+		List<ScheduleState> scheduleStates = null;
+
+		ScheduleGroup group = m_dbHelper.getScheduleGroupByTag(groupTag);
+		if (group == null) {
+			return null;
+		}
+
+		schedules = m_dbHelper.getSchedulesByGroupId(group.getId());
+
+		if (schedules != null && schedules.size() > 0) {
+			scheduleStates = new ArrayList<ScheduleState>();
+			for (Schedule schedule : schedules) {
+				scheduleStates.add(schedule);
+			}
+		}
+		return scheduleStates;
+	}
+
+	/**
+	 * Description:
+	 * 		Cancels a schedule
+	 * @param scheduleId - The id of the schedule to cancel.
+	 * @return boolean - true if successful, false otherwise
+	 */
+	public boolean cancelScheduleById(long scheduleId) {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		boolean deleted = m_dbHelper.deleteSchedule(scheduleId);
+		m_alarmProcessor.updateScheduleStates(null);
+		return deleted;
+	}
+
+	/**
      * Description:
      * 		Cancels schedules that match a given tag
      * @param scheduleTag - the schedule tag
      * @return int - the number of schedules deleted
-     */
+     *
     public int cancelSchedule(String scheduleTag) {
         if (!m_initialized) {
             throw new IllegalStateException("SAManager not initialized");
         }
 
         return m_dbHelper.deleteScheduleByTag(scheduleTag);
-    }
+    }*/
+
+	/**
+	 * Description:
+	 * 		Deletes all schedules belonging to a a group identified by group tag
+	 * @param groupTag - The group tag.
+	 * @return boolean - true if successful, false otherwise
+	 */
+	public boolean deleteSchedulesByGroupTag(String groupTag) {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		boolean deleted = m_dbHelper.deleteSchedulesByGroup(groupTag);
+		m_alarmProcessor.updateScheduleStates(null);
+
+		return deleted;
+	}
+
 
 	/**
 	 * Description:
@@ -361,6 +375,12 @@ public class SAManager {
 
 		// Delete existing events
 		m_dbHelper.deleteEventByScheduleId(scheduleId);
+
+		Schedule schedule = m_dbHelper.getScheduleById(scheduleId);
+		schedule.setState(STATE_OFF);
+		schedule.setDisabled(true);
+		m_dbHelper.addOrUpdateSchedule(schedule);
+
 		SparseArray<Long> changedSchedules = new SparseArray<Long>();
 		changedSchedules.put((int)scheduleId, scheduleId);
 		m_alarmProcessor.updateScheduleStates(changedSchedules);
@@ -494,6 +514,28 @@ public class SAManager {
 		} else {
 			return true;
 		}
+	}
+
+	/**
+	 * Description:
+	 * 		Retrieve the version name of this library as reported by the package manager
+	 */
+	public String getVersionName() {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		if (m_versionName == null) {
+			try {
+				PackageInfo packageInfo = m_context.getPackageManager()
+						.getPackageInfo("com.scalior.schedulealarmmanager", 0);
+				m_versionName = packageInfo.versionName;
+			} catch (PackageManager.NameNotFoundException e) {
+				// should never happen. Do nothing
+			}
+		}
+
+		return m_versionName;
 	}
 
 	/**
