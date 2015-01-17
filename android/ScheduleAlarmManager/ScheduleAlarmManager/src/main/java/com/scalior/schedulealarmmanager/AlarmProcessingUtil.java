@@ -126,7 +126,8 @@ public class AlarmProcessingUtil {
         List<ScheduleEvent> scheduleEvents = m_dbHelper.getScheduleEvents();
         if (scheduleEvents != null) {
             for (ScheduleEvent scheduleEvent : scheduleEvents) {
-	            // If we have previously visited this schedule and it wasn't changed, skip
+	            // If we have previously visited this schedule and its state
+	            // wasn't changed, skip it
 	            long scheduleId = scheduleEvent.getScheduleId();
 	            if (scheduleNotChangedMap.get((int)scheduleId) != null) {
 		            continue;

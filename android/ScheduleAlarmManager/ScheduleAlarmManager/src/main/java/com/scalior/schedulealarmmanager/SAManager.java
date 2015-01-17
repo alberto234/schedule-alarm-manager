@@ -569,7 +569,7 @@ public class SAManager {
                 repeatTypeDuration = 30 * AlarmProcessingUtil.DAY_MS;
                 break;
             case REPEAT_TYPE_YEARLY:
-                repeatTypeDuration += 365 * AlarmProcessingUtil.DAY_MS;
+                repeatTypeDuration = 365 * AlarmProcessingUtil.DAY_MS;
                 break;
             default:
                 // Unrecognized repeat type. Return zero
