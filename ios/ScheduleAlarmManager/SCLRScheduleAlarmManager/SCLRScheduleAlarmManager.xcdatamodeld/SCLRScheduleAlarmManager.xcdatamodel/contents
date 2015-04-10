@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="6751" systemVersion="14C1514" minimumToolsVersion="Automatic" macOSVersion="Automatic" iOSVersion="Automatic">
+    <entity name="SCLREvent" representedClassName="SCLREvent" syncable="YES">
+        <attribute name="alarmTime" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="state" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="schedule" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SCLRSchedule" inverseName="events" inverseEntity="SCLRSchedule" syncable="YES"/>
+    </entity>
+    <entity name="SCLRSchedule" representedClassName="SCLRSchedule" syncable="YES">
+        <attribute name="disabled" optional="YES" attributeType="Boolean" syncable="YES"/>
+        <attribute name="duration" optional="YES" attributeType="Integer 32" defaultValueString="0" syncable="YES"/>
+        <attribute name="repeatType" optional="YES" attributeType="Integer 16" defaultValueString="0" syncable="YES"/>
+        <attribute name="startTime" optional="YES" attributeType="Date" syncable="YES"/>
+        <attribute name="state" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="tag" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="events" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="SCLREvent" inverseName="schedule" inverseEntity="SCLREvent" syncable="YES"/>
+        <relationship name="group" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SCLRScheduleGroup" inverseName="schedules" inverseEntity="SCLRScheduleGroup" syncable="YES"/>
+    </entity>
+    <entity name="SCLRScheduleGroup" representedClassName="SCLRScheduleGroup" syncable="YES">
+        <attribute name="enabled" optional="YES" attributeType="Boolean" syncable="YES"/>
+        <attribute name="tag" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="schedules" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="SCLRSchedule" inverseName="group" inverseEntity="SCLRSchedule" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="SCLRScheduleGroup" positionX="0" positionY="0" width="0" height="0"/>
+        <element name="SCLREvent" positionX="0" positionY="0" width="0" height="0"/>
+        <element name="SCLRSchedule" positionX="0" positionY="0" width="0" height="0"/>
+    </elements>
+</model>

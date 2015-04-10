@@ -1,0 +1,537 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D9EA69741AD752A300A5DA61 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69731AD752A300A5DA61 /* main.m */; };
+		D9EA69771AD752A300A5DA61 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69761AD752A300A5DA61 /* AppDelegate.m */; };
+		D9EA697D1AD752A300A5DA61 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA697C1AD752A300A5DA61 /* ViewController.m */; };
+		D9EA69801AD752A300A5DA61 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D9EA697E1AD752A300A5DA61 /* Main.storyboard */; };
+		D9EA69821AD752A300A5DA61 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D9EA69811AD752A300A5DA61 /* Images.xcassets */; };
+		D9EA69851AD752A300A5DA61 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = D9EA69831AD752A300A5DA61 /* LaunchScreen.xib */; };
+		D9EA69911AD752A300A5DA61 /* ScheduleAlarmManagerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69901AD752A300A5DA61 /* ScheduleAlarmManagerTests.m */; };
+		D9EA69CC1AD757A400A5DA61 /* SCLRAlarmProcessingUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69B91AD757A400A5DA61 /* SCLRAlarmProcessingUtil.m */; };
+		D9EA69CD1AD757A400A5DA61 /* SCLRTimeSelector.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69BC1AD757A400A5DA61 /* SCLRTimeSelector.m */; };
+		D9EA69CE1AD757A400A5DA61 /* SCLRDBHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69BE1AD757A400A5DA61 /* SCLRDBHelper.m */; };
+		D9EA69CF1AD757A400A5DA61 /* SCLREvent.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69C11AD757A400A5DA61 /* SCLREvent.m */; };
+		D9EA69D01AD757A400A5DA61 /* SCLRSchedule.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69C31AD757A400A5DA61 /* SCLRSchedule.m */; };
+		D9EA69D11AD757A400A5DA61 /* SCLRScheduleGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69C51AD757A400A5DA61 /* SCLRScheduleGroup.m */; };
+		D9EA69D21AD757A400A5DA61 /* SCLRSAManager.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69C71AD757A400A5DA61 /* SCLRSAManager.m */; };
+		D9EA69D31AD757A400A5DA61 /* SCLRSAMConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69CA1AD757A400A5DA61 /* SCLRSAMConstants.m */; };
+		D9EA69D61AD75ABA00A5DA61 /* ScheduleRowViews.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69D51AD75ABA00A5DA61 /* ScheduleRowViews.m */; };
+		D9EA69D91AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69D71AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D9EA698B1AD752A300A5DA61 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9EA69661AD752A300A5DA61 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D9EA696D1AD752A300A5DA61;
+			remoteInfo = ScheduleAlarmManager;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		D9EA696E1AD752A300A5DA61 /* ScheduleAlarmManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScheduleAlarmManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D9EA69721AD752A300A5DA61 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D9EA69731AD752A300A5DA61 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		D9EA69751AD752A300A5DA61 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		D9EA69761AD752A300A5DA61 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		D9EA697B1AD752A300A5DA61 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		D9EA697C1AD752A300A5DA61 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		D9EA697F1AD752A300A5DA61 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		D9EA69811AD752A300A5DA61 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		D9EA69841AD752A300A5DA61 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
+		D9EA698A1AD752A300A5DA61 /* ScheduleAlarmManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScheduleAlarmManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D9EA698F1AD752A300A5DA61 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D9EA69901AD752A300A5DA61 /* ScheduleAlarmManagerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScheduleAlarmManagerTests.m; sourceTree = "<group>"; };
+		D9EA69B81AD757A400A5DA61 /* SCLRAlarmProcessingUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SCLRAlarmProcessingUtil.h; path = SCLRScheduleAlarmManager/SCLRAlarmProcessingUtil.h; sourceTree = "<group>"; };
+		D9EA69B91AD757A400A5DA61 /* SCLRAlarmProcessingUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SCLRAlarmProcessingUtil.m; path = SCLRScheduleAlarmManager/SCLRAlarmProcessingUtil.m; sourceTree = "<group>"; };
+		D9EA69BB1AD757A400A5DA61 /* SCLRTimeSelector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SCLRTimeSelector.h; sourceTree = "<group>"; };
+		D9EA69BC1AD757A400A5DA61 /* SCLRTimeSelector.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SCLRTimeSelector.m; sourceTree = "<group>"; };
+		D9EA69BD1AD757A400A5DA61 /* SCLRDBHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SCLRDBHelper.h; path = SCLRScheduleAlarmManager/SCLRDBHelper.h; sourceTree = "<group>"; };
+		D9EA69BE1AD757A400A5DA61 /* SCLRDBHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SCLRDBHelper.m; path = SCLRScheduleAlarmManager/SCLRDBHelper.m; sourceTree = "<group>"; };
+		D9EA69C01AD757A400A5DA61 /* SCLREvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SCLREvent.h; sourceTree = "<group>"; };
+		D9EA69C11AD757A400A5DA61 /* SCLREvent.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SCLREvent.m; sourceTree = "<group>"; };
+		D9EA69C21AD757A400A5DA61 /* SCLRSchedule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SCLRSchedule.h; sourceTree = "<group>"; };
+		D9EA69C31AD757A400A5DA61 /* SCLRSchedule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SCLRSchedule.m; sourceTree = "<group>"; };
+		D9EA69C41AD757A400A5DA61 /* SCLRScheduleGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SCLRScheduleGroup.h; sourceTree = "<group>"; };
+		D9EA69C51AD757A400A5DA61 /* SCLRScheduleGroup.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SCLRScheduleGroup.m; sourceTree = "<group>"; };
+		D9EA69C61AD757A400A5DA61 /* SCLRSAManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SCLRSAManager.h; path = SCLRScheduleAlarmManager/SCLRSAManager.h; sourceTree = "<group>"; };
+		D9EA69C71AD757A400A5DA61 /* SCLRSAManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SCLRSAManager.m; path = SCLRScheduleAlarmManager/SCLRSAManager.m; sourceTree = "<group>"; };
+		D9EA69C81AD757A400A5DA61 /* SCLRSAMCallback.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SCLRSAMCallback.h; path = SCLRScheduleAlarmManager/SCLRSAMCallback.h; sourceTree = "<group>"; };
+		D9EA69C91AD757A400A5DA61 /* SCLRSAMConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SCLRSAMConstants.h; path = SCLRScheduleAlarmManager/SCLRSAMConstants.h; sourceTree = "<group>"; };
+		D9EA69CA1AD757A400A5DA61 /* SCLRSAMConstants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SCLRSAMConstants.m; path = SCLRScheduleAlarmManager/SCLRSAMConstants.m; sourceTree = "<group>"; };
+		D9EA69CB1AD757A400A5DA61 /* SCLRScheduleState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SCLRScheduleState.h; path = SCLRScheduleAlarmManager/SCLRScheduleState.h; sourceTree = "<group>"; };
+		D9EA69D41AD75ABA00A5DA61 /* ScheduleRowViews.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScheduleRowViews.h; sourceTree = "<group>"; };
+		D9EA69D51AD75ABA00A5DA61 /* ScheduleRowViews.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScheduleRowViews.m; sourceTree = "<group>"; };
+		D9EA69D81AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SCLRScheduleAlarmManager.xcdatamodel; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D9EA696B1AD752A300A5DA61 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D9EA69871AD752A300A5DA61 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D9EA69651AD752A300A5DA61 = {
+			isa = PBXGroup;
+			children = (
+				D9EA699A1AD7558900A5DA61 /* SCLRScheduleAlarmManager */,
+				D9EA69701AD752A300A5DA61 /* ScheduleAlarmManager */,
+				D9EA698D1AD752A300A5DA61 /* ScheduleAlarmManagerTests */,
+				D9EA696F1AD752A300A5DA61 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D9EA696F1AD752A300A5DA61 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA696E1AD752A300A5DA61 /* ScheduleAlarmManager.app */,
+				D9EA698A1AD752A300A5DA61 /* ScheduleAlarmManagerTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D9EA69701AD752A300A5DA61 /* ScheduleAlarmManager */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA69D41AD75ABA00A5DA61 /* ScheduleRowViews.h */,
+				D9EA69D51AD75ABA00A5DA61 /* ScheduleRowViews.m */,
+				D9EA69751AD752A300A5DA61 /* AppDelegate.h */,
+				D9EA69761AD752A300A5DA61 /* AppDelegate.m */,
+				D9EA697B1AD752A300A5DA61 /* ViewController.h */,
+				D9EA697C1AD752A300A5DA61 /* ViewController.m */,
+				D9EA697E1AD752A300A5DA61 /* Main.storyboard */,
+				D9EA69811AD752A300A5DA61 /* Images.xcassets */,
+				D9EA69831AD752A300A5DA61 /* LaunchScreen.xib */,
+				D9EA69711AD752A300A5DA61 /* Supporting Files */,
+			);
+			path = ScheduleAlarmManager;
+			sourceTree = "<group>";
+		};
+		D9EA69711AD752A300A5DA61 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA69721AD752A300A5DA61 /* Info.plist */,
+				D9EA69731AD752A300A5DA61 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		D9EA698D1AD752A300A5DA61 /* ScheduleAlarmManagerTests */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA69901AD752A300A5DA61 /* ScheduleAlarmManagerTests.m */,
+				D9EA698E1AD752A300A5DA61 /* Supporting Files */,
+			);
+			path = ScheduleAlarmManagerTests;
+			sourceTree = "<group>";
+		};
+		D9EA698E1AD752A300A5DA61 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA698F1AD752A300A5DA61 /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		D9EA699A1AD7558900A5DA61 /* SCLRScheduleAlarmManager */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA69BA1AD757A400A5DA61 /* CustomViews */,
+				D9EA69BF1AD757A400A5DA61 /* Model */,
+				D9EA69B81AD757A400A5DA61 /* SCLRAlarmProcessingUtil.h */,
+				D9EA69B91AD757A400A5DA61 /* SCLRAlarmProcessingUtil.m */,
+				D9EA69BD1AD757A400A5DA61 /* SCLRDBHelper.h */,
+				D9EA69BE1AD757A400A5DA61 /* SCLRDBHelper.m */,
+				D9EA69C61AD757A400A5DA61 /* SCLRSAManager.h */,
+				D9EA69C71AD757A400A5DA61 /* SCLRSAManager.m */,
+				D9EA69C81AD757A400A5DA61 /* SCLRSAMCallback.h */,
+				D9EA69C91AD757A400A5DA61 /* SCLRSAMConstants.h */,
+				D9EA69CA1AD757A400A5DA61 /* SCLRSAMConstants.m */,
+				D9EA69CB1AD757A400A5DA61 /* SCLRScheduleState.h */,
+				D9EA69D71AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld */,
+			);
+			name = SCLRScheduleAlarmManager;
+			sourceTree = "<group>";
+		};
+		D9EA69BA1AD757A400A5DA61 /* CustomViews */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA69BB1AD757A400A5DA61 /* SCLRTimeSelector.h */,
+				D9EA69BC1AD757A400A5DA61 /* SCLRTimeSelector.m */,
+			);
+			name = CustomViews;
+			path = SCLRScheduleAlarmManager/CustomViews;
+			sourceTree = "<group>";
+		};
+		D9EA69BF1AD757A400A5DA61 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				D9EA69C01AD757A400A5DA61 /* SCLREvent.h */,
+				D9EA69C11AD757A400A5DA61 /* SCLREvent.m */,
+				D9EA69C21AD757A400A5DA61 /* SCLRSchedule.h */,
+				D9EA69C31AD757A400A5DA61 /* SCLRSchedule.m */,
+				D9EA69C41AD757A400A5DA61 /* SCLRScheduleGroup.h */,
+				D9EA69C51AD757A400A5DA61 /* SCLRScheduleGroup.m */,
+			);
+			name = Model;
+			path = SCLRScheduleAlarmManager/Model;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D9EA696D1AD752A300A5DA61 /* ScheduleAlarmManager */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D9EA69941AD752A300A5DA61 /* Build configuration list for PBXNativeTarget "ScheduleAlarmManager" */;
+			buildPhases = (
+				D9EA696A1AD752A300A5DA61 /* Sources */,
+				D9EA696B1AD752A300A5DA61 /* Frameworks */,
+				D9EA696C1AD752A300A5DA61 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ScheduleAlarmManager;
+			productName = ScheduleAlarmManager;
+			productReference = D9EA696E1AD752A300A5DA61 /* ScheduleAlarmManager.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D9EA69891AD752A300A5DA61 /* ScheduleAlarmManagerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D9EA69971AD752A300A5DA61 /* Build configuration list for PBXNativeTarget "ScheduleAlarmManagerTests" */;
+			buildPhases = (
+				D9EA69861AD752A300A5DA61 /* Sources */,
+				D9EA69871AD752A300A5DA61 /* Frameworks */,
+				D9EA69881AD752A300A5DA61 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D9EA698C1AD752A300A5DA61 /* PBXTargetDependency */,
+			);
+			name = ScheduleAlarmManagerTests;
+			productName = ScheduleAlarmManagerTests;
+			productReference = D9EA698A1AD752A300A5DA61 /* ScheduleAlarmManagerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D9EA69661AD752A300A5DA61 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0620;
+				ORGANIZATIONNAME = Scalior;
+				TargetAttributes = {
+					D9EA696D1AD752A300A5DA61 = {
+						CreatedOnToolsVersion = 6.2;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+						};
+					};
+					D9EA69891AD752A300A5DA61 = {
+						CreatedOnToolsVersion = 6.2;
+						TestTargetID = D9EA696D1AD752A300A5DA61;
+					};
+				};
+			};
+			buildConfigurationList = D9EA69691AD752A300A5DA61 /* Build configuration list for PBXProject "ScheduleAlarmManager" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D9EA69651AD752A300A5DA61;
+			productRefGroup = D9EA696F1AD752A300A5DA61 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D9EA696D1AD752A300A5DA61 /* ScheduleAlarmManager */,
+				D9EA69891AD752A300A5DA61 /* ScheduleAlarmManagerTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D9EA696C1AD752A300A5DA61 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9EA69801AD752A300A5DA61 /* Main.storyboard in Resources */,
+				D9EA69851AD752A300A5DA61 /* LaunchScreen.xib in Resources */,
+				D9EA69821AD752A300A5DA61 /* Images.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D9EA69881AD752A300A5DA61 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D9EA696A1AD752A300A5DA61 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9EA69771AD752A300A5DA61 /* AppDelegate.m in Sources */,
+				D9EA69CC1AD757A400A5DA61 /* SCLRAlarmProcessingUtil.m in Sources */,
+				D9EA69D61AD75ABA00A5DA61 /* ScheduleRowViews.m in Sources */,
+				D9EA69D11AD757A400A5DA61 /* SCLRScheduleGroup.m in Sources */,
+				D9EA69D31AD757A400A5DA61 /* SCLRSAMConstants.m in Sources */,
+				D9EA69D01AD757A400A5DA61 /* SCLRSchedule.m in Sources */,
+				D9EA697D1AD752A300A5DA61 /* ViewController.m in Sources */,
+				D9EA69CF1AD757A400A5DA61 /* SCLREvent.m in Sources */,
+				D9EA69741AD752A300A5DA61 /* main.m in Sources */,
+				D9EA69D91AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld in Sources */,
+				D9EA69D21AD757A400A5DA61 /* SCLRSAManager.m in Sources */,
+				D9EA69CE1AD757A400A5DA61 /* SCLRDBHelper.m in Sources */,
+				D9EA69CD1AD757A400A5DA61 /* SCLRTimeSelector.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D9EA69861AD752A300A5DA61 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9EA69911AD752A300A5DA61 /* ScheduleAlarmManagerTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D9EA698C1AD752A300A5DA61 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D9EA696D1AD752A300A5DA61 /* ScheduleAlarmManager */;
+			targetProxy = D9EA698B1AD752A300A5DA61 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		D9EA697E1AD752A300A5DA61 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				D9EA697F1AD752A300A5DA61 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		D9EA69831AD752A300A5DA61 /* LaunchScreen.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				D9EA69841AD752A300A5DA61 /* Base */,
+			);
+			name = LaunchScreen.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		D9EA69921AD752A300A5DA61 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D9EA69931AD752A300A5DA61 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D9EA69951AD752A300A5DA61 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_FILE = ScheduleAlarmManager/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		D9EA69961AD752A300A5DA61 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_FILE = ScheduleAlarmManager/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		D9EA69981AD752A300A5DA61 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = ScheduleAlarmManagerTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScheduleAlarmManager.app/ScheduleAlarmManager";
+			};
+			name = Debug;
+		};
+		D9EA69991AD752A300A5DA61 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = ScheduleAlarmManagerTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScheduleAlarmManager.app/ScheduleAlarmManager";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D9EA69691AD752A300A5DA61 /* Build configuration list for PBXProject "ScheduleAlarmManager" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9EA69921AD752A300A5DA61 /* Debug */,
+				D9EA69931AD752A300A5DA61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D9EA69941AD752A300A5DA61 /* Build configuration list for PBXNativeTarget "ScheduleAlarmManager" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9EA69951AD752A300A5DA61 /* Debug */,
+				D9EA69961AD752A300A5DA61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D9EA69971AD752A300A5DA61 /* Build configuration list for PBXNativeTarget "ScheduleAlarmManagerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9EA69981AD752A300A5DA61 /* Debug */,
+				D9EA69991AD752A300A5DA61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		D9EA69D71AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				D9EA69D81AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodel */,
+			);
+			name = SCLRScheduleAlarmManager.xcdatamodeld;
+			path = SCLRScheduleAlarmManager/SCLRScheduleAlarmManager.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
+	};
+	rootObject = D9EA69661AD752A300A5DA61 /* Project object */;
+}
