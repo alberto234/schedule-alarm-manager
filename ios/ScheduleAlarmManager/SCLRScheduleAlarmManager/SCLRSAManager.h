@@ -17,14 +17,6 @@
 
 /**
  * Description:
- * 		Initialize the Schedule Alarm Manager
- *		Call this method before using the schedule alarm manager.
- * @return boolean - true if successful, false other wise
- */
-- (BOOL)setup;
-
-/**
- * Description:
  *  This method sets the callback.
  *
  *  @param callback - The SAM callback instance.
@@ -129,6 +121,31 @@
  * 	    This method is reference counted
  */
 - (void)resumeCallbacks;
+
+/**
+ * Description:
+ * 		Notification that a background fetch has been received.
+ *
+ * @discussion	The application that integrates with the ScheduleAlarmManager
+ *				should register for background fetch and call this method.
+ *				It is currently not possible to register for this notification
+ *				without the help of the application
+ *				Once called the ScheduleAlarmManager will successfully schedule
+ *				the next time background fetch should be called.
+ *
+ *				As an enhancement, we could have all scheduling be handled by the 
+ *				application such that the application can correctly set the next
+ *				time a fetch should occur based on this and other external factors.
+ *				This will be accomplished by calling getTimeForNextAlarm
+ *
+ */
+- (void)receivedBackgroundFetch;
+
+/**
+ * Description:
+ * 		Force the computation of the schedule states
+ */
+- (void)refreshScheduleStates;
 
 /**
  * Utility method to compute the duration of a schedule given the start

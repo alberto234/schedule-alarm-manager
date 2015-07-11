@@ -31,6 +31,7 @@ private ScheduleEvent m_nextScheduleEvent;
 - (NSDate *)getNextAlarmTime:(NSDate *)startTime repeating:(int)repeatType;
 - (NSString *)getCurrentState:(SCLREvent *)event;
 - (void)setAlarmForEvent:(SCLREvent *)event;
+- (void)updateGroupState;
 
 @end
 
@@ -73,6 +74,7 @@ NSObject<SCLRSAMCallback> * _samCallback;
 -(void)setSamCallback:(NSObject<SCLRSAMCallback> *)samCallback forceReplace:(BOOL)replace {
 	if (replace || _samCallback == nil) {
 		_samCallback = samCallback;
+		[self updateScheduleStates:nil];
 	} else {
 		// TODO: Throw exception
 		// throw new UnsupportedOperationException("The callback has already been set");
@@ -175,6 +177,15 @@ NSObject<SCLRSAMCallback> * _samCallback;
 	NSMapTable * scheduleChangedMap = [[NSMapTable alloc] init];
 	NSMapTable * scheduleNotChangedMap = [[NSMapTable alloc] init];
 	
+	// First reset the state of all the changed schedules that have been passed in.
+	NSEnumerator *changedSchedulesEnum = [changedSchedules objectEnumerator];
+	SCLRSchedule *sched = [changedSchedulesEnum nextObject];
+	while (sched != nil) {
+		sched.state = SCHEDULE_STATE_OFF;
+		sched = [changedSchedulesEnum nextObject];
+	}
+	
+	// Loop through all existing events and update their schedules' state.
 	NSDate * currTime = [NSDate date];
 	NSArray * events = [self.dbHelper getAllEvents];
 	
@@ -223,7 +234,10 @@ NSObject<SCLRSAMCallback> * _samCallback;
 		}
 	}
 	
-	// Save the context
+	// Update groups with their current schedule state
+	[self updateGroupState];
+	
+	// All manipulations with db is done. Save the context here
 	[self.dbHelper saveContext];
 	
 	self.nextEvent = [self.dbHelper getNextEvent];
@@ -316,19 +330,42 @@ NSObject<SCLRSAMCallback> * _samCallback;
  * This uses the iOS background fetch framework
  */
 - (void)setAlarmForEvent:(SCLREvent *)event {
-	if (event == nil) {
-		return;
+	NSTimeInterval nextFecthInterval = 0;
+	UIApplication * application = [UIApplication sharedApplication];
+
+	NSLog(@"Before event check");
+	if (event != nil) {
+		nextFecthInterval = [event.alarmTime timeIntervalSinceNow];
+		NSLog(@"New fetch interval = %lf", nextFecthInterval);
 	}
 	
-	UIApplication * application = [UIApplication sharedApplication];
-	NSTimeInterval nextFecthInterval = [event.alarmTime timeIntervalSinceNow];
-	
 	// Schedule the event only if it hasn't passed.
+	NSLog(@"Final fetch interval = %lf, application = %@", nextFecthInterval, application);
 	if (nextFecthInterval > 0) {
 		[application setMinimumBackgroundFetchInterval:nextFecthInterval];
+	} else {
+		[application setMinimumBackgroundFetchInterval:UIApplicationBackgroundFetchIntervalNever];
 	}
 }
 
 
+/*
+ * Helper method to compute the overall schedule state for a group.
+ * Schedules that are not in a group don't factor here.
+ */
+- (void)updateGroupState {
+	NSArray* groups = [self.dbHelper getAllScheduleGroups];
+	
+	for (SCLRScheduleGroup* group in groups) {
+		NSString* groupState = SCHEDULE_STATE_OFF;
+		for (SCLRSchedule* schedule in group.schedules) {
+			if ([schedule.state isEqualToString:SCHEDULE_STATE_ON]) {
+				groupState = SCHEDULE_STATE_ON;
+				break;
+			}
+		}
+		group.overallState = groupState;
+	}
+}
 
 @end

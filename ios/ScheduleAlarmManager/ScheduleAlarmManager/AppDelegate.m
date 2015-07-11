@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "SCLRAlarmProcessingUtil.h"
 
 @implementation AppDelegate
 
@@ -40,6 +41,18 @@
 	
 	// TODO: Call the SCLRSAManager::persistChanges? Is this necessary?
 	//[self saveContext];
+}
+
+- (void)application:(UIApplication *)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
+{
+	NSLog(@"########### Received Background Fetch ###########");
+	
+	//Download  the Content .
+	[[SCLRAlarmProcessingUtil sharedInstance] updateScheduleStates:nil appInBackground:YES];
+	
+	//Cleanup
+	completionHandler(UIBackgroundFetchResultNewData);
+ 
 }
 
 @end

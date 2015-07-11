@@ -14,6 +14,7 @@
 
 @dynamic tag;
 @dynamic enabled;
+@dynamic overallState;
 @dynamic schedules;
 
 @end

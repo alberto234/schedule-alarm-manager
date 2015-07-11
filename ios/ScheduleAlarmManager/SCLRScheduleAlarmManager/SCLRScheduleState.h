@@ -25,6 +25,7 @@
 -(BOOL)isDisabled;
 -(NSString *)getGroupTag;
 -(BOOL)isGroupEnabled;
+-(NSString *)getOverallGroupState;
 
 @end
 

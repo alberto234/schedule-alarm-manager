@@ -40,16 +40,11 @@
 	if (self) {
 		_dbHelper = [SCLRDBHelper sharedInstance];
 		_alarmProcessor = [SCLRAlarmProcessingUtil sharedInstance];
+		[_alarmProcessor updateScheduleStates:nil];
+		self.initialized = YES;
 	}
 	return self;
 }
-
--(BOOL)setup {
-	[_alarmProcessor updateScheduleStates:nil];
-	self.initialized = YES;
-	return YES;
-}
-
 
 /**
  * Description:
@@ -357,6 +352,15 @@
 - (void)resumeCallbacks {
 	[self.alarmProcessor resumeCallbacks];
 }
+
+- (void)receivedBackgroundFetch {
+	[[SCLRAlarmProcessingUtil sharedInstance] updateScheduleStates:nil appInBackground:YES];
+}
+
+- (void)refreshScheduleStates {
+	[[SCLRAlarmProcessingUtil sharedInstance] updateScheduleStates:nil appInBackground:YES];
+}
+
 
 /**
  * Utility method to compute the duration of a schedule given the start

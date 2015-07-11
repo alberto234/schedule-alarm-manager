@@ -97,6 +97,13 @@
 
 /**
  * Description:
+ * 		Returns all the groups in the system.
+ * @return NSArray * - An array containing all groups
+ */
+-(NSArray *)getAllScheduleGroups;
+
+/**
+ * Description:
  *		This causes the managed object context to persist its objects
  */
 -(void)saveContext;

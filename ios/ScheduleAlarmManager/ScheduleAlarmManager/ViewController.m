@@ -53,7 +53,6 @@ NSString * const SUNDAY					= @"SUNDAY";
 	// Do any additional setup after loading the view, typically from a nib.
 	_scheduleMgr = [SCLRSAManager sharedInstance];
 	[_scheduleMgr setCallback:self forceReplace:YES];
-	[_scheduleMgr setup];
 	
 	self.initializing = YES;
 	[self setupViews];

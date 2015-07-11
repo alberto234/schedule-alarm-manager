@@ -15,6 +15,7 @@
 
 @property (nonatomic, retain) NSString * tag;
 @property (nonatomic, retain) NSNumber * enabled;
+@property (nonatomic, retain) NSString * overallState;
 @property (nonatomic, retain) NSSet *schedules;
 @end
 

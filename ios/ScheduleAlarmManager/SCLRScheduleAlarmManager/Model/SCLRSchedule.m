@@ -78,5 +78,13 @@
 	}
 }
 
+-(NSString *)getOverallGroupState {
+	if (self.group != nil) {
+		return self.group.overallState;
+	} else {
+		return nil;
+	}
+}
+
 
 @end

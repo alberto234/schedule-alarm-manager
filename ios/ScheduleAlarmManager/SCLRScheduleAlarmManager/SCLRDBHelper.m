@@ -207,6 +207,20 @@
 }
 
 
+- (NSArray *)getAllScheduleGroups {
+	NSEntityDescription *entityDesc =
+	[NSEntityDescription entityForName:@"SCLRScheduleGroup"
+				inManagedObjectContext:self.managedObjectContext];
+	
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
+	[request setEntity:entityDesc];
+	
+	NSError *error;
+	NSArray *objects = [self.managedObjectContext executeFetchRequest:request
+																error:&error];
+	return objects;
+}
+
 /*-(BOOL)saveContext {
 	NSError *error;
 	if (![self.coreContext save:&error]) {
