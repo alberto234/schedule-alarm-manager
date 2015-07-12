@@ -62,7 +62,7 @@ public class Schedule implements ScheduleState {
 	@Override
 	public long getScheduleId() {
 		return m_id;
-	};
+	}
 
 	@Override
 	public Calendar getStartTime() {
@@ -110,6 +110,14 @@ public class Schedule implements ScheduleState {
 
 		// If a group is not found, this is not part of a group so return true
 		return true;
+	}
+
+	@Override
+	public String getGroupState() {
+		if (getGroup() != null) {
+			return getGroup().getOverallState();
+		}
+		return null;
 	}
 
 	// Other getters and setters

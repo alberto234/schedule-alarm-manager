@@ -51,6 +51,7 @@ public class WeeklyScheduleFragment extends Fragment {
 
 	private ScheduleRowViews[] m_scheduleRowViewsArray;
 	private TextView m_nextAlarmInfo;
+	private TextView m_groupStateTV;
 	private CheckBox m_suspendAllSchedulesCB;
 	private boolean m_initalizing;
 
@@ -94,6 +95,7 @@ public class WeeklyScheduleFragment extends Fragment {
 		View rootView = inflater.inflate(R.layout.fragment_weekly_schedule, container, false);
 
 		m_nextAlarmInfo = (TextView)rootView.findViewById(R.id.next_alarm_info);
+		m_groupStateTV = (TextView)rootView.findViewById(R.id.group_state);
 		m_suspendAllSchedulesCB = (CheckBox)rootView.findViewById(R.id.sch_group_suspend);
 		m_suspendAllSchedulesCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
@@ -216,7 +218,7 @@ public class WeeklyScheduleFragment extends Fragment {
 	 */
 	public interface OnFragmentInteractionListener {
 		// TODO: Update argument type and name
-		public void onFragmentInteraction(Uri uri);
+		void onFragmentInteraction(Uri uri);
 	}
 
 	private void initializeScheduleViews() {
@@ -297,6 +299,17 @@ public class WeeklyScheduleFragment extends Fragment {
 				m_nextAlarmInfo.setText("<None>");
 			}
 
+			// Update the group schedule state
+			m_groupStateTV.setText("This schedule is currently OFF");		// Default to OFF
+			List<ScheduleState> scheduleStateList = m_scheduleMgr.getScheduleStatesByGroupTag(SCHEDULE_GROUP);
+			if (scheduleStateList != null && scheduleStateList.size() > 0) {
+				ScheduleState schedule = scheduleStateList.get(0);
+				if (schedule.isGroupEnabled() &&
+						schedule.getGroupState().equals(SAManager.STATE_ON)) {
+					m_groupStateTV.setText("This schedule is currently ON");
+				}
+			}
+
 			boolean groupState = m_scheduleMgr.getGroupState(SCHEDULE_GROUP);
 			if (groupState) {
 				m_suspendAllSchedulesCB.setChecked(false);
@@ -317,8 +330,7 @@ public class WeeklyScheduleFragment extends Fragment {
 		// Label the days in the appropriate locale
 		String[] shortWeekdays = DateFormatSymbols.getInstance().getShortWeekdays();
 		m_scheduleRowViewsArray[index].m_daytv
-				.setText(shortWeekdays[tempTime.get(Calendar.DAY_OF_WEEK)] +
-						"-" + m_scheduleRowViewsArray[index].m_scheduleId);
+				.setText(shortWeekdays[tempTime.get(Calendar.DAY_OF_WEEK)]);
 
 		setTextAndTagOnTimeView(m_scheduleRowViewsArray[index].m_fromtv, tempTime);
 
@@ -524,6 +536,17 @@ public class WeeklyScheduleFragment extends Fragment {
 						DateFormat.getTimeFormat(getActivity()).format(alarmDate));
 			} else {
 				m_nextAlarmInfo.setText("<None>");
+			}
+
+			// Update the group schedule state
+			m_groupStateTV.setText("This schedule is currently OFF");		// Default to OFF
+			List<ScheduleState> scheduleStates = m_scheduleMgr.getScheduleStatesByGroupTag(SCHEDULE_GROUP);
+			if (scheduleStates != null && scheduleStates.size() > 0) {
+				ScheduleState schedule = scheduleStates.get(0);
+				if (schedule.isGroupEnabled() &&
+						schedule.getGroupState().equals(SAManager.STATE_ON)) {
+					m_groupStateTV.setText("This schedule is currently ON");
+				}
 			}
 		}
 	}

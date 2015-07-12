@@ -407,6 +407,14 @@ public class SAManager {
 
 	/**
 	 * Description:
+	 * 		Force the computation of the schedule states
+	 */
+	public void refreshScheduleStates() {
+		m_alarmProcessor.updateScheduleStates(null);
+	}
+
+	/**
+	 * Description:
 	 *  Method to get the schedule for the next alarm
 	 *
 	*/

@@ -32,13 +32,14 @@ import java.util.Calendar;
  * The interface is used to provide details about a schedule's state to the user
  */
 public interface ScheduleState {
-	public long getScheduleId();
-	public Calendar getStartTime();
-	public int getDuration();
-	public int getRepeatType();
-	public String getTag();
-	public String getState();
-	public boolean isDisabled();
-	public String getGroupTag();
-	public boolean isGroupEnabled();
+	long getScheduleId();
+	Calendar getStartTime();
+	int getDuration();
+	int getRepeatType();
+	String getTag();
+	String getState();
+	boolean isDisabled();
+	String getGroupTag();
+	boolean isGroupEnabled();
+	String getGroupState();
 }

@@ -33,6 +33,8 @@ import android.util.SparseArray;
 
 import com.scalior.schedulealarmmanager.database.SAMSQLiteHelper;
 import com.scalior.schedulealarmmanager.model.Event;
+import com.scalior.schedulealarmmanager.model.Schedule;
+import com.scalior.schedulealarmmanager.model.ScheduleGroup;
 import com.scalior.schedulealarmmanager.modelholder.ScheduleEvent;
 
 import java.text.DateFormat;
@@ -170,6 +172,9 @@ public class AlarmProcessingUtil {
 			    }
 		    }
 	    }
+
+        // Update groups with their current schedule state
+        updateGroupState();
 
 	    m_nextScheduleEvent = m_dbHelper.getNextEvent();
         setAlarmForEvent(m_nextScheduleEvent);
@@ -332,4 +337,34 @@ public class AlarmProcessingUtil {
 			m_invokeCallback = true;
 		}
 	}
+
+
+    /**
+     * Helper method to compute the overall schedule state for a group.
+     * Schedules that are not in a group don't factor here.
+     */
+    private void updateGroupState() {
+        List<ScheduleGroup> groups = m_dbHelper.getAllScheduleGroups();
+
+        if (groups == null) {
+            return;
+        }
+
+        for (ScheduleGroup group : groups) {
+            String groupState = SAManager.STATE_OFF;
+            List<Schedule> schedules = m_dbHelper.getSchedulesByGroupId(group.getId());
+            if (schedules == null) {
+                continue;
+            }
+
+            for (Schedule schedule : schedules) {
+                if (schedule.getState().equals(SAManager.STATE_ON)) {
+                    groupState = SAManager.STATE_ON;
+                    break;
+                }
+            }
+            group.setOverallState(groupState);
+            m_dbHelper.addOrUpdateScheduleGroup(group);
+        }
+    }
 }

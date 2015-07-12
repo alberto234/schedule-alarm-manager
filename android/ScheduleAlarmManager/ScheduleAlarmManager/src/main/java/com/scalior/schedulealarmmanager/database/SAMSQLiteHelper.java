@@ -60,7 +60,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 
     // Database information
     private static final String DATABASE_NAME = "scheduleeventmanager.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
 
     // Tables:
     //		Database Creation ID:
@@ -77,11 +77,13 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 	public static final String SCHEDULEGROUP_ID = "_id";
 	public static final String SCHEDULEGROUP_TAG = "tag";
 	public static final String SCHEDULEGROUP_ENABLED_FL = "enabled";
+    public static final String SCHEDULEGROUP_OVERALL_STATE = "overallstate";
 	private static final String TABLE_SCHEDULEGROUP_CREATE = "create table " +
 			TABLE_SCHEDULEGROUP + " (" +
 			SCHEDULEGROUP_ID + " integer primary key autoincrement, " +
 			SCHEDULEGROUP_TAG + " text not null, " +
-			SCHEDULEGROUP_ENABLED_FL + " boolean not null);";
+			SCHEDULEGROUP_ENABLED_FL + " boolean not null, " +
+            SCHEDULEGROUP_OVERALL_STATE + " text );";
 
 	//		Schedule
     public static final String TABLE_SCHEDULE = "schedule";
@@ -644,7 +646,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 
 			Cursor cursor = database.query(TABLE_SCHEDULE,
 					columns,
-					selection.toString(),
+					selection,
 					null, null, null, null);
 
 			List<Schedule> schedules = extractSchedulesFromCursor(cursor);
@@ -679,20 +681,22 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 			String selection = SCHEDULEGROUP_ID + " = " + group.getId();
 
 			Cursor cursor = database.query(TABLE_SCHEDULEGROUP,
-					columns,
-					selection,
-					null, null, null, null);
+                    columns,
+                    selection,
+                    null, null, null, null);
 
 			if (cursor.getCount() == 1) {
 				// Update fields that change.
 				ContentValues values = new ContentValues();
 				values.put(SCHEDULEGROUP_ENABLED_FL, group.isEnabled());
+                values.put(SCHEDULEGROUP_OVERALL_STATE, group.getOverallState());
 				database.update(TABLE_SCHEDULEGROUP, values, selection, null);
 				retVal = group.getId();
 			} else if (cursor.getCount() == 0) {
 				ContentValues values = new ContentValues();
 				values.put(SCHEDULEGROUP_TAG, group.getTag());
 				values.put(SCHEDULEGROUP_ENABLED_FL, group.isEnabled());
+                values.put(SCHEDULEGROUP_OVERALL_STATE, group.getOverallState());
 				retVal = database.insert(TABLE_SCHEDULEGROUP, null, values);
 				group.setId(retVal);
 			}
@@ -716,12 +720,13 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 		if (id > 0) {
 			SQLiteDatabase database = getReadableDatabase();
 
-			String[] columns = {SCHEDULEGROUP_ID, SCHEDULEGROUP_TAG, SCHEDULEGROUP_ENABLED_FL};
+			String[] columns = {SCHEDULEGROUP_ID, SCHEDULEGROUP_TAG, SCHEDULEGROUP_ENABLED_FL,
+                                SCHEDULEGROUP_OVERALL_STATE};
 			String selection = SCHEDULEGROUP_ID + " = " + id;
 
 			Cursor cursor = database.query(TABLE_SCHEDULEGROUP,
 					columns,
-					selection.toString(),
+					selection,
 					null, null, null, null);
 
 			if (cursor.getCount() > 0) {
@@ -729,6 +734,7 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 				group = new ScheduleGroup(cursor.getString(cursor.getColumnIndex(SCHEDULEGROUP_TAG)),
 						cursor.getInt(cursor.getColumnIndex(SCHEDULEGROUP_ENABLED_FL)) == 1);
 				group.setId(id);
+                group.setOverallState(cursor.getString(cursor.getColumnIndex(SCHEDULEGROUP_OVERALL_STATE)));
 			}
 			cursor.close();
 			database.close();
@@ -1027,7 +1033,44 @@ public class SAMSQLiteHelper extends SQLiteOpenHelper {
 		return success;
 	}
 
-	/**
+    /**
+     * Description:
+     * 		Returns all the groups in the system.
+     *
+     * @return The list of ScheduleGroups, or null if none is exists
+     */
+    public List<ScheduleGroup> getAllScheduleGroups() {
+
+        String[] columns = {SCHEDULEGROUP_ID, SCHEDULEGROUP_TAG, SCHEDULEGROUP_ENABLED_FL,
+                SCHEDULEGROUP_OVERALL_STATE};
+
+        SQLiteDatabase database = getReadableDatabase();
+        Cursor cursor = database.query(TABLE_SCHEDULEGROUP, columns, null, null, null, null, null);
+
+        ArrayList<ScheduleGroup> groups = null;
+
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+
+            groups = new ArrayList<ScheduleGroup>();
+
+            while (!cursor.isAfterLast()) {
+
+               ScheduleGroup group = new ScheduleGroup(cursor.getString(cursor.getColumnIndex(SCHEDULEGROUP_TAG)),
+                        cursor.getInt(cursor.getColumnIndex(SCHEDULEGROUP_ENABLED_FL)) == 1);
+               group.setId(cursor.getLong(cursor.getColumnIndex(SCHEDULEGROUP_ID)));
+               group.setOverallState(cursor.getString(cursor.getColumnIndex(SCHEDULEGROUP_OVERALL_STATE)));
+
+               groups.add(group);
+               cursor.moveToNext();
+            }
+        }
+
+        return groups;
+    }
+
+
+    /**
 	 * Helper method to populate an ArrayList of schedules given a database cursor
 	 * @param cursor
 	 * @return

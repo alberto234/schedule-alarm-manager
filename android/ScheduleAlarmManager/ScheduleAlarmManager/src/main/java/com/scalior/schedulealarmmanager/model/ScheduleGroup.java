@@ -7,6 +7,7 @@ public class ScheduleGroup {
 	private long m_id;
 	private String m_tag;
 	private boolean m_enabled;
+	private String m_overallState;
 
 
 	public ScheduleGroup(String tag, boolean enabled) {
@@ -38,6 +39,14 @@ public class ScheduleGroup {
 
 	public void setId(long id) {
 		m_id = id;
+	}
+
+	public void setOverallState(String overallState) {
+		m_overallState = overallState;
+	}
+
+	public String getOverallState() {
+		return m_overallState;
 	}
 
 }
