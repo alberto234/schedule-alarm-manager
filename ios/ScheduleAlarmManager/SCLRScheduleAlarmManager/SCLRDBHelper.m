@@ -196,6 +196,49 @@
 	return result;
 }
 
+/**
+ * Description:
+ * This returns the next event to be scheduled for the group with given tag,
+ * based on the current time
+ *
+ * @return One ScheduleEvent, or null if no other event occurs in the future
+ */
+- (SCLREvent *)getNextEventForGroup:(NSString*)groupTag {
+	NSEntityDescription *entityDesc =
+	[NSEntityDescription entityForName:@"SCLREvent"
+				inManagedObjectContext:self.managedObjectContext];
+	
+	NSFetchRequest *request = [[NSFetchRequest alloc] init];
+	[request setEntity:entityDesc];
+	
+	// Get all events that happen in the future, then get the first one that for the
+	// group in question.
+	// In traditional SQL this can be achieved using a join. What is the equivalent
+	// of this using Core Data?
+	NSPredicate *pred =
+	[NSPredicate predicateWithFormat:@"(alarmTime >= %@)", [NSDate date]];
+	[request setPredicate:pred];
+	
+	NSSortDescriptor *sortDescriptor =
+	[[NSSortDescriptor alloc] initWithKey:@"alarmTime" ascending:YES];
+	NSArray *sortDescriptors = [[NSArray alloc] initWithObjects:sortDescriptor, nil];
+	[request setSortDescriptors:sortDescriptors];
+	
+	NSError *error;
+	NSArray *objects = [self.managedObjectContext executeFetchRequest:request error:&error];
+	
+	SCLREvent * result = nil;
+	if ([objects count] > 0) {
+		for (SCLREvent* event in objects) {
+			if ([event.schedule.group.tag isEqualToString:groupTag]) {
+				result = event;
+				break;
+			}
+		}
+	}
+	return result;
+}
+
 -(NSSet *)getScheduleStatesByGroupTag:(NSString *)groupTag {
 	
 	SCLRScheduleGroup* group = [self getScheduleGroupByTag:groupTag];

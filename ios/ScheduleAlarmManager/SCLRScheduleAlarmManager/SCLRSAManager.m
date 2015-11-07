@@ -221,17 +221,19 @@
 	}
 	
 	BOOL scheduleChanged = NO;
+	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
 	group.enabled = [NSNumber numberWithBool:YES];
 	for (SCLRSchedule * schedule in group.schedules) {
 		if (![schedule.disabled boolValue]) {
 			scheduleChanged = YES;
 			[self createStartAndStopEvents:schedule];
+			[changedSchedules setObject:schedule forKey:schedule];
 		}
 	}
 
 	if (scheduleChanged) {
 		[self.dbHelper saveContext];
-		[self.alarmProcessor updateScheduleStates:nil];
+		[self.alarmProcessor updateScheduleStates:changedSchedules];
 	}
 	
 	return YES;
@@ -263,7 +265,14 @@
 	group.enabled = [NSNumber numberWithBool:NO];
 	BOOL success = [self.dbHelper deleteEventsForScheduleGroup:group];
 
-	[self.alarmProcessor updateScheduleStates:nil];
+	// Get all schedules that belong to this group and pass them to the alarm processor
+	// for notification.
+	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
+	for (SCLRSchedule* schedule in group.schedules) {
+		[changedSchedules setObject:schedule forKey:schedule];
+	}
+
+	[self.alarmProcessor updateScheduleStates:changedSchedules];
 	
 	return success;
 }
@@ -425,6 +434,29 @@
 	}
 	
 	return [self.alarmProcessor getTimeForNextAlarm];
+}
+
+/**
+ * Description:
+ *  Method to get the time for the next alarm for the group identified by the group tag
+ *
+ */
+- (NSDate *)getTimeForNextAlarm:(NSString*) groupTag {
+	if (!self.initialized) {
+		return nil; // TODO: This needs to be an IllegalState exception
+	}
+	
+	if (groupTag == nil) {
+		// System-wide alarm
+		return [self.alarmProcessor getTimeForNextAlarm];
+	} else {
+		SCLREvent* nextEvent = [self.dbHelper getNextEventForGroup:groupTag];
+		if (nextEvent != nil) {
+			return nextEvent.alarmTime;
+		} else {
+			return nil;
+		}
+	}
 }
 
 /***************************

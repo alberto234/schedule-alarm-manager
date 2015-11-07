@@ -169,4 +169,11 @@
  */
 - (NSDate *)getTimeForNextAlarm;
 
+/**
+ * Description:
+ *  Method to get the time for the next alarm
+ *
+ */
+- (NSDate *)getTimeForNextAlarm:(NSString*) groupTag;
+
 @end

@@ -94,6 +94,14 @@
  */
 - (SCLREvent *)getNextEvent;
 
+/**
+ * Description:
+ * This returns the next event to be scheduled for the group with given tag,
+ * based on the current time
+ *
+ * @return One ScheduleEvent, or null if no other event occurs in the future
+ */
+- (SCLREvent *)getNextEventForGroup:(NSString*)groupTag;
 
 /**
  * Description:
