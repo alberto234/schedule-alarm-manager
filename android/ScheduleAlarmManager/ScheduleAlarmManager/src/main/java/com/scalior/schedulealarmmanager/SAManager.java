@@ -430,11 +430,38 @@ public class SAManager {
 	 *  Method to get the time for the next alarm
 	 *
 	 */
+	@Deprecated
 	public Calendar getTimeForNextAlarm() {
 		if (!m_initialized) {
 			throw new IllegalStateException("SAManager not initialized");
 		}
 		return m_alarmProcessor.getTimeForNextAlarm();
+	}
+
+	/**
+	 * Description:
+	 *  Method to get the time for the next alarm for a specified group.
+	 *  If the groupTag is null, this will return the time for the next alarm system-wide
+	 * @param groupTag - group tag.
+	 * @return The time for the next alarm, or null if there is no future event for the criteria
+	 */
+	public Calendar getTimeForNextAlarm(String groupTag) {
+		if (!m_initialized) {
+			throw new IllegalStateException("SAManager not initialized");
+		}
+
+		Calendar nextAlarm = null;
+
+		if (groupTag == null) {
+			// System-wide next alarm.
+			nextAlarm = m_alarmProcessor.getTimeForNextAlarm();
+		} else {
+			ScheduleEvent scheduleEvent = m_dbHelper.getNextEventForGroup(groupTag);
+			if (scheduleEvent != null) {
+				nextAlarm = scheduleEvent.getEvent().getAlarmTime();
+			}
+		}
+		return nextAlarm;
 	}
 
 	/**
@@ -451,14 +478,24 @@ public class SAManager {
 			return false;
 		}
 
+		SparseArray<Long> changedSchedules = new SparseArray<Long>();
 		boolean retVal =  m_dbHelper.deleteEventsByGroupTag(groupTag);
 		if (retVal) {
 			ScheduleGroup group = m_dbHelper.getScheduleGroupByTag(groupTag);
 			group.setEnabled(false);
 			m_dbHelper.addOrUpdateScheduleGroup(group);
+
+			// Get all schedules that belong to this group and pass their ids to the alarm processor
+			// for notification.
+			List<Schedule> schedules = m_dbHelper.getSchedulesByGroupId(group.getId());
+			if (schedules != null && schedules.size() > 0) {
+				for (Schedule schedule : schedules) {
+					changedSchedules.put((int)schedule.getId(), schedule.getId());
+				}
+			}
 		}
 
-		m_alarmProcessor.updateScheduleStates(null);
+		m_alarmProcessor.updateScheduleStates(changedSchedules);
 
 		return retVal;
 	}
@@ -480,6 +517,7 @@ public class SAManager {
 
 		boolean retVal = true;
 
+		SparseArray<Long> changedSchedules = new SparseArray<Long>();
 		List<ScheduleAndEventsToAdd> scheduleAndEventsToAdd = new ArrayList<ScheduleAndEventsToAdd>();
 		ScheduleGroup group = m_dbHelper.getScheduleGroupByTag(groupTag);
 		if (group != null) {
@@ -492,6 +530,8 @@ public class SAManager {
 								schedule.getDuration(), schedule.getRepeatType());
 						scheduleAndEventsToAdd.add(
 								new ScheduleAndEventsToAdd(schedule, startAndStopEvents, false));
+
+						changedSchedules.put((int)schedule.getId(), schedule.getId());
 					}
 				}
 			}
@@ -503,7 +543,7 @@ public class SAManager {
 				group.setEnabled(true);
 				m_dbHelper.addOrUpdateScheduleGroup(group);
 			}
-			m_alarmProcessor.updateScheduleStates(null);
+			m_alarmProcessor.updateScheduleStates(changedSchedules);
 		}
 
 		// If there was nothing to add given the tag, return true
