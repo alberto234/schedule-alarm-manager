@@ -13,11 +13,19 @@ All Android source code is located in the directory android/
 The library is developed for Android Studio. To integrate with the library, copy the source files into a third party or similar folder and incorporate it into your project as a library
 A sample app is provided in the Sample directory. This library doesn't provide any UI components but the sample app suggests a few UI components. Future releases could refine the UI components.
 
+<p align="center" >
+  <img src="https://raw.githubusercontent.com/alberto234/schedule-alarm-manager/master/docs/assets/Android_screenshot.png" alt="Android Screenshot" title="Android Screenshot">
+</p>
+
 
 ## iOS
 All iOS source code is located in the directory ios/
 To integrate with the library, copy the source files into a third party or similar directory of your Xcode project. 
 A sample application is provided in ScheduleAlarmManager/ScheduleAlarmManager. This library doesn't provide any UI components but the sample app suggests a few UI components. Future releases could refine the UI components.
+
+<p align="center" >
+  <img src="https://raw.githubusercontent.com/alberto234/schedule-alarm-manager/master/docs/assets/ios_screenshot.png" alt="iOS Screenshot" title="iOS Screenshot">
+</p>
 
 # Usage
 Let's say we want to add the given schedule to the library:
