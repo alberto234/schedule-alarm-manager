@@ -28,10 +28,7 @@ private ScheduleEvent m_nextScheduleEvent;
 
 
 // Helper methods
-- (NSDate *)getNextAlarmTime:(NSDate *)startTime repeating:(int)repeatType;
-- (NSString *)getCurrentState:(SCLREvent *)event;
 - (void)setAlarmForEvent:(SCLREvent *)event;
-- (void)updateGroupState;
 
 @end
 
@@ -118,7 +115,7 @@ NSObject<SCLRSAMCallback> * _samCallback;
 /*
  * Helper method to determine the next time this event should be triggered
  * given the current time
- */
+ *
 - (NSDate *)getNextAlarmTime:(NSDate *)startTime repeating:(int)repeatType {
 	
 	NSDate * currTime = [NSDate date];
@@ -147,7 +144,7 @@ NSObject<SCLRSAMCallback> * _samCallback;
 	}
 	
 	return nextAlarmTime;
-}
+}*/
 
 
 /**
@@ -174,77 +171,17 @@ NSObject<SCLRSAMCallback> * _samCallback;
  * @param background: A flag that indicates that the app is running in the background
  */
 - (void)updateScheduleStates:(NSMapTable *)changedSchedules appInBackground:(BOOL)background {
-	NSMapTable * scheduleChangedMap = [[NSMapTable alloc] init];
-	NSMapTable * scheduleNotChangedMap = [[NSMapTable alloc] init];
-	
-	// First reset the state of all the changed schedules that have been passed in.
-	NSEnumerator *changedSchedulesEnum = [changedSchedules objectEnumerator];
-	SCLRSchedule *sched = [changedSchedulesEnum nextObject];
-	while (sched != nil) {
-		sched.state = SCHEDULE_STATE_OFF;
-		sched = [changedSchedulesEnum nextObject];
-	}
-	
-	// Loop through all existing events and update their schedules' state.
-	NSDate * currTime = [NSDate date];
-	NSArray * events = [self.dbHelper getAllEvents];
-	
-	// Question: Do we have to check for null before the forin loop?
-	for (SCLREvent * event in events) {
-		SCLRSchedule * schedule = event.schedule;
-
-		// If we have previously visited this schedule and its state
-		// wasn't changed, skip it
-		if ([scheduleNotChangedMap objectForKey:schedule] != nil) {
-			continue;
-		}
-		
-		// Update any expired events
-		if ([currTime laterDate:event.alarmTime]) {
-			event.alarmTime = [self getNextAlarmTime:event.alarmTime
-										   repeating:[schedule.repeatType intValue]];
-		}
-		
-		if ([scheduleChangedMap objectForKey:schedule] == nil) {
-			NSString * prevState = schedule.state;
-			NSString * currState = [self getCurrentState:event];
-
-			BOOL forceNotify = (changedSchedules != nil &&
-								[changedSchedules objectForKey:schedule] != nil);
-		
-			if (!forceNotify && [currState isEqualToString:prevState]) {
-				[scheduleNotChangedMap setObject:schedule forKey:schedule];
-			} else {
-				event.schedule.state = currState;
-				[scheduleChangedMap setObject:schedule forKey:schedule];
-			}
-		}
-	}
-	
-	// Final check that all the schedules marked as changed into this method are also included
-	// in the scheduleChangeMap being passed in the callback
-	if (changedSchedules != nil) {
-		NSEnumerator *changedSchedulesEnum = [changedSchedules objectEnumerator];
-		SCLRSchedule *sched = [changedSchedulesEnum nextObject];
-		while (sched != nil) {
-			if ([scheduleChangedMap objectForKey:sched] == nil) {
-				[scheduleChangedMap setObject:sched forKey:sched];
-			}
-			sched = [changedSchedulesEnum nextObject];
-		}
-	}
-	
-	// Update groups with their current schedule state
-	[self updateGroupState];
-	
-	// All manipulations with db is done. Save the context here
-	[self.dbHelper saveContext];
+	NSMapTable * scheduleChangedMap = [self.dbHelper updateScheduleStates:changedSchedules];
 	
 	self.nextEvent = [self.dbHelper getNextEvent];
 	[self setAlarmForEvent:self.nextEvent];
-	
-	NSLog(@"Next event is %@, time %@, state %@",
-		  self.nextEvent.schedule.tag, self.nextEvent.alarmTime, self.nextEvent.state);
+
+	if (self.nextEvent != nil) {
+		NSLog(@"Next event is %@, time %@, state %@",
+			  self.nextEvent.schedule.tag, self.nextEvent.alarmTime, self.nextEvent.state);
+	} else {
+		NSLog(@"Next event is not set (nil)");
+	}
 	
 	// Return a list of schedules that changed
 	if (self.invokeCallback && _samCallback != nil) {
@@ -283,7 +220,7 @@ NSObject<SCLRSAMCallback> * _samCallback;
  * Get the current state of an event.
  * This method will use the event's associated schedule's repeatType and duration
  * to compute its current state
- */
+ *
 - (NSString *)getCurrentState:(SCLREvent *)event {
 	NSString * currState = SCHEDULE_STATE_ON; // Assume on
 	NSDate * currTime = [NSDate date];
@@ -323,7 +260,7 @@ NSObject<SCLRSAMCallback> * _samCallback;
 	}
 	
 	return currState;
-}
+}*/
 
 /*
  * Helper method to schedule an alarm for an event.
@@ -348,24 +285,5 @@ NSObject<SCLRSAMCallback> * _samCallback;
 	}
 }
 
-
-/*
- * Helper method to compute the overall schedule state for a group.
- * Schedules that are not in a group don't factor here.
- */
-- (void)updateGroupState {
-	NSArray* groups = [self.dbHelper getAllScheduleGroups];
-	
-	for (SCLRScheduleGroup* group in groups) {
-		NSString* groupState = SCHEDULE_STATE_OFF;
-		for (SCLRSchedule* schedule in group.schedules) {
-			if ([schedule.state isEqualToString:SCHEDULE_STATE_ON]) {
-				groupState = SCHEDULE_STATE_ON;
-				break;
-			}
-		}
-		group.overallState = groupState;
-	}
-}
 
 @end

@@ -14,7 +14,8 @@
 
 @interface SCLRDBHelper : NSObject
 
-@property (readonly, strong, nonatomic) NSManagedObjectContext *managedObjectContext;
+// Every call creates a new private MOC
+// @property (readonly, strong, nonatomic) NSManagedObjectContext *privateManagedObjectContext;
 
 +(SCLRDBHelper *)sharedInstance;
 
@@ -46,7 +47,7 @@
  * @param schedule
  * @param events - An array representing the start and stop events
  */
--(SCLRSchedule *)addSchedule:(SCLRSchedule *)schedule withEvents:(NSArray *)events;
+//-(SCLRSchedule *)addSchedule:(SCLRSchedule *)schedule withEvents:(NSArray *)events;
 
 /**
  * Description:
@@ -76,15 +77,9 @@
  * Description:
  * 		Returns all the schedules that match a given group tag
  * @return NSSet * - A set containing all the matching schedules
- */
+ *
 -(NSSet *)getScheduleStatesByGroupTag:(NSString *)groupTag;
-
-/**
- * Description:
- * 		Returns all the events in the system, covering all the schedules.
- * @return NSArray * - A set containing all events
- */
--(NSArray *)getAllEvents;
+*/
 
 /**
  * Description:
@@ -107,13 +102,33 @@
  * Description:
  * 		Returns all the groups in the system.
  * @return NSArray * - An array containing all groups
- */
+ *
 -(NSArray *)getAllScheduleGroups;
+*/
+
+-(SCLRSchedule *)addSchedule:(NSDate *)startTime withDuration:(int)duration
+				   repeating:(int)repeatType withTag:(NSString *)tag
+				withGroupTag:(NSString *)groupTag;
+
+-(SCLRSchedule *)updateSchedule:(SCLRSchedule *)schedule
+								  newStartTime:(NSDate *)startTime withDuration:(int)duration;
+
+-(BOOL)enableSchedule:(SCLRSchedule *)schedule enable:(BOOL)enable;
+
+-(NSMapTable *)enableScheduleGroup:(NSString *)groupTag enable:(BOOL)enable;
+
+-(BOOL)deleteSchedulesByGroupTag:(NSString *)groupTag;
+
+-(NSSet *)getSchedulesByGroupTag:(NSString *)groupTag;
+
+- (NSMapTable *)updateScheduleStates:(NSMapTable *)changedSchedules;
+
+-(NSArray *)getAllEvents:(NSManagedObjectContext *)privateMOC;
 
 /**
  * Description:
  *		This causes the managed object context to persist its objects
  */
--(void)saveContext;
+// -(void)saveContext;
 
 @end

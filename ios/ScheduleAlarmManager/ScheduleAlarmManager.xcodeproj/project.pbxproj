@@ -24,6 +24,9 @@
 		D9EA69D31AD757A400A5DA61 /* SCLRSAMConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69CA1AD757A400A5DA61 /* SCLRSAMConstants.m */; };
 		D9EA69D61AD75ABA00A5DA61 /* ScheduleRowViews.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69D51AD75ABA00A5DA61 /* ScheduleRowViews.m */; };
 		D9EA69D91AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = D9EA69D71AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld */; };
+		D9EDC8271E5CE4CE00438D11 /* SCLREventObj.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EDC8241E5CE4CE00438D11 /* SCLREventObj.m */; };
+		D9EDC8281E5CE4CE00438D11 /* SCLRScheduleObj.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EDC8261E5CE4CE00438D11 /* SCLRScheduleObj.m */; };
+		D9EDC82B1E5CE4F300438D11 /* SCLRSAMUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EDC8291E5CE4F300438D11 /* SCLRSAMUtil.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +74,12 @@
 		D9EA69D41AD75ABA00A5DA61 /* ScheduleRowViews.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScheduleRowViews.h; sourceTree = "<group>"; };
 		D9EA69D51AD75ABA00A5DA61 /* ScheduleRowViews.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScheduleRowViews.m; sourceTree = "<group>"; };
 		D9EA69D81AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SCLRScheduleAlarmManager.xcdatamodel; sourceTree = "<group>"; };
+		D9EDC8231E5CE4CE00438D11 /* SCLREventObj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SCLREventObj.h; sourceTree = "<group>"; };
+		D9EDC8241E5CE4CE00438D11 /* SCLREventObj.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SCLREventObj.m; sourceTree = "<group>"; };
+		D9EDC8251E5CE4CE00438D11 /* SCLRScheduleObj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SCLRScheduleObj.h; sourceTree = "<group>"; };
+		D9EDC8261E5CE4CE00438D11 /* SCLRScheduleObj.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SCLRScheduleObj.m; sourceTree = "<group>"; };
+		D9EDC8291E5CE4F300438D11 /* SCLRSAMUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SCLRSAMUtil.m; path = SCLRScheduleAlarmManager/SCLRSAMUtil.m; sourceTree = "<group>"; };
+		D9EDC82A1E5CE4F300438D11 /* SCLRSAMUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SCLRSAMUtil.h; path = SCLRScheduleAlarmManager/SCLRSAMUtil.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,6 +177,8 @@
 				D9EA69C91AD757A400A5DA61 /* SCLRSAMConstants.h */,
 				D9EA69CA1AD757A400A5DA61 /* SCLRSAMConstants.m */,
 				D9EA69CB1AD757A400A5DA61 /* SCLRScheduleState.h */,
+				D9EDC8291E5CE4F300438D11 /* SCLRSAMUtil.m */,
+				D9EDC82A1E5CE4F300438D11 /* SCLRSAMUtil.h */,
 				D9EA69D71AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld */,
 			);
 			name = SCLRScheduleAlarmManager;
@@ -186,6 +197,10 @@
 		D9EA69BF1AD757A400A5DA61 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				D9EDC8231E5CE4CE00438D11 /* SCLREventObj.h */,
+				D9EDC8241E5CE4CE00438D11 /* SCLREventObj.m */,
+				D9EDC8251E5CE4CE00438D11 /* SCLRScheduleObj.h */,
+				D9EDC8261E5CE4CE00438D11 /* SCLRScheduleObj.m */,
 				D9EA69C01AD757A400A5DA61 /* SCLREvent.h */,
 				D9EA69C11AD757A400A5DA61 /* SCLREvent.m */,
 				D9EA69C21AD757A400A5DA61 /* SCLRSchedule.h */,
@@ -246,6 +261,7 @@
 				TargetAttributes = {
 					D9EA696D1AD752A300A5DA61 = {
 						CreatedOnToolsVersion = 6.2;
+						DevelopmentTeam = MRTL79FX6Q;
 						SystemCapabilities = {
 							com.apple.BackgroundModes = {
 								enabled = 1;
@@ -311,7 +327,10 @@
 				D9EA697D1AD752A300A5DA61 /* ViewController.m in Sources */,
 				D9EA69CF1AD757A400A5DA61 /* SCLREvent.m in Sources */,
 				D9EA69741AD752A300A5DA61 /* main.m in Sources */,
+				D9EDC8281E5CE4CE00438D11 /* SCLRScheduleObj.m in Sources */,
 				D9EA69D91AD7623F00A5DA61 /* SCLRScheduleAlarmManager.xcdatamodeld in Sources */,
+				D9EDC82B1E5CE4F300438D11 /* SCLRSAMUtil.m in Sources */,
+				D9EDC8271E5CE4CE00438D11 /* SCLREventObj.m in Sources */,
 				D9EA69D21AD757A400A5DA61 /* SCLRSAManager.m in Sources */,
 				D9EA69CE1AD757A400A5DA61 /* SCLRDBHelper.m in Sources */,
 				D9EA69CD1AD757A400A5DA61 /* SCLRTimeSelector.m in Sources */,
@@ -439,6 +458,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = ScheduleAlarmManager/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.scalior.ios.$(PRODUCT_NAME:rfc1034identifier)";
@@ -450,6 +470,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = ScheduleAlarmManager/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.scalior.ios.$(PRODUCT_NAME:rfc1034identifier)";

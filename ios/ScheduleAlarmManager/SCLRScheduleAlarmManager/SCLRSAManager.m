@@ -15,11 +15,10 @@
 @property (nonatomic) BOOL initialized;
 @property (nonatomic, readonly) SCLRDBHelper * dbHelper;
 @property (nonatomic, readonly) SCLRAlarmProcessingUtil *alarmProcessor;
+@property (strong, nonatomic) dispatch_queue_t refreshScheduleStateQueue;
 
 // Private helper methods
 - (BOOL)isRepeatTypeValid:(int)repeatType;
-- (NSArray *)createStartAndStopEvents:(SCLRSchedule *)schedule;
-- (NSDate *)getNextAlarmTime:(NSDate *)timeToAdjust repeating:(int)repeatType;
 @end
 
 @implementation SCLRSAManager
@@ -38,6 +37,7 @@
 {
 	self = [super init];
 	if (self) {
+		_refreshScheduleStateQueue = dispatch_queue_create("com.scalior.samanager.queue.refreshschedulestate", DISPATCH_QUEUE_SERIAL);
 		_dbHelper = [SCLRDBHelper sharedInstance];
 		_alarmProcessor = [SCLRAlarmProcessingUtil sharedInstance];
 		[_alarmProcessor updateScheduleStates:nil];
@@ -61,7 +61,7 @@
 -(NSObject<SCLRScheduleState> *)addSchedule:(NSDate *)startTime withDuration:(int)duration
 			   repeating:(int)repeatType withTag:(NSString *)tag
 			withGroupTag:(NSString *)groupTag {
-	
+
 	if (!self.initialized) {
 		return nil; // TODO: This needs to be an IllegalState exception
 	}
@@ -76,37 +76,15 @@
 		// TODO: Throw IllegalArgumentException
 		return nil;
 	}
-	
-	SCLRScheduleGroup * group = nil;
-	if ([groupTag length] > 0) {
-		group = [self.dbHelper getScheduleGroupByTag:groupTag];
-	}
-	
-	if (group == nil) {
-		// Add a new group.
-		group = [self.dbHelper addScheduleGroup:groupTag asEnabled:YES];
-	}
-	
-	if (group == nil) {
-		// Throw appropriate exception
-		return nil;
-	}
-	
-	SCLRSchedule *schedule = [SCLRSchedule getBlankScheduleInContext:self.dbHelper.managedObjectContext];
-	schedule.startTime = startTime;
-	schedule.duration = [NSNumber numberWithInt:duration];
-	schedule.repeatType = [NSNumber numberWithInt:repeatType];
-	schedule.disabled = [NSNumber numberWithBool:NO];
-	schedule.tag = tag;
-	schedule.group = group;
 
-	NSArray *events = [self createStartAndStopEvents:schedule];
-	
-	[self.dbHelper addSchedule:schedule withEvents:events];
+	SCLRSchedule* schedule = [self.dbHelper addSchedule:startTime withDuration:duration
+											  repeating:repeatType withTag:tag
+										   withGroupTag:groupTag];
 	
 	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
 	[changedSchedules setObject:schedule forKey:schedule];
 	[self.alarmProcessor updateScheduleStates:changedSchedules];
+	
 	return schedule;
 }
 
@@ -129,20 +107,13 @@
 	if (scheduleToUpdate == nil) {
 		return nil;
 	}
-	
-	// Ensure that existing events for the schedule are deleted
-	[self.dbHelper deleteEventsForSchedule:scheduleToUpdate];
 
-	scheduleToUpdate.startTime = startTime;
-	scheduleToUpdate.duration = [NSNumber numberWithInt:duration];
-	
-	NSArray *events = [self createStartAndStopEvents:scheduleToUpdate];
-	
-	[self.dbHelper addSchedule:scheduleToUpdate withEvents:events];
+	[self.dbHelper updateSchedule:scheduleToUpdate newStartTime:startTime withDuration:duration];
 	
 	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
 	[changedSchedules setObject:scheduleToUpdate forKey:scheduleToUpdate];
 	[self.alarmProcessor updateScheduleStates:changedSchedules];
+
 	return scheduleToUpdate;
 }
 
@@ -157,21 +128,17 @@
 		return NO; // TODO: This needs to be an IllegalState exception
 	}
 
-	SCLRSchedule *scheduleToEnable = (SCLRSchedule *)schedule;
-
-	// Ensure that existing events for the schedule are deleted
-	[self.dbHelper deleteEventsForSchedule:scheduleToEnable];
-	
-	
-	scheduleToEnable.disabled = [NSNumber numberWithBool:NO];
-	NSArray *events = [self createStartAndStopEvents:scheduleToEnable];
-	[self.dbHelper addSchedule:scheduleToEnable withEvents:events];
-	
-	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
-	[changedSchedules setObject:scheduleToEnable forKey:scheduleToEnable];
-	[self.alarmProcessor updateScheduleStates:changedSchedules];
-
-	return YES;
+	if (schedule == nil) {
+		return NO;
+	} else {
+		[self.dbHelper enableSchedule:(SCLRSchedule *)schedule enable:YES];
+		
+		NSMapTable * changedSchedules = [[NSMapTable alloc] init];
+		[changedSchedules setObject:schedule forKey:schedule];
+		[self.alarmProcessor updateScheduleStates:changedSchedules];
+		
+		return YES;
+	}
 }
 
 /**
@@ -185,15 +152,17 @@
 		return NO; // TODO: This needs to be an IllegalState exception
 	}
 	
-	SCLRSchedule *scheduleToDisable = (SCLRSchedule *)schedule;
+	if (schedule == nil) {
+		return NO;
+	} else {
+		[self.dbHelper enableSchedule:(SCLRSchedule *)schedule enable:NO];
 
-	scheduleToDisable.disabled = [NSNumber numberWithBool:YES];
-	[self.dbHelper deleteEventsForSchedule:scheduleToDisable];
-	
-	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
-	[changedSchedules setObject:scheduleToDisable forKey:scheduleToDisable];
-	[self.alarmProcessor updateScheduleStates:changedSchedules];
-	return YES;
+		NSMapTable * changedSchedules = [[NSMapTable alloc] init];
+		[changedSchedules setObject:schedule forKey:schedule];
+		[self.alarmProcessor updateScheduleStates:changedSchedules];
+		
+		return YES;
+	}
 }
 
 
@@ -208,34 +177,13 @@
 		return NO; // TODO: This needs to be an IllegalState exception
 	}
 	
-	SCLRScheduleGroup * group = nil;
-	if ([groupTag length] > 0) {
-		group = [self.dbHelper getScheduleGroupByTag:groupTag];
-	} else {
+	if (groupTag.length == 0) {
 		return NO;
 	}
 	
-	if (group == nil) {
-		// Throw appropriate exception
-		return NO;
-	}
 	
-	BOOL scheduleChanged = NO;
-	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
-	group.enabled = [NSNumber numberWithBool:YES];
-	for (SCLRSchedule * schedule in group.schedules) {
-		if (![schedule.disabled boolValue]) {
-			scheduleChanged = YES;
-			[self createStartAndStopEvents:schedule];
-			[changedSchedules setObject:schedule forKey:schedule];
-		}
-	}
-
-	if (scheduleChanged) {
-		[self.dbHelper saveContext];
-		[self.alarmProcessor updateScheduleStates:changedSchedules];
-	}
-	
+	NSMapTable * changedSchedules = [self.dbHelper enableScheduleGroup:groupTag enable:YES];
+	[self.alarmProcessor updateScheduleStates:changedSchedules];
 	return YES;
 }
 
@@ -249,32 +197,14 @@
 		return NO; // TODO: This needs to be an IllegalState exception
 	}
 	
-	
-	SCLRScheduleGroup * group = nil;
-	if ([groupTag length] > 0) {
-		group = [self.dbHelper getScheduleGroupByTag:groupTag];
-	} else {
+	if (groupTag.length == 0) {
 		return NO;
 	}
 	
-	if (group == nil) {
-		// Throw appropriate exception
-		return NO;
-	}
-
-	group.enabled = [NSNumber numberWithBool:NO];
-	BOOL success = [self.dbHelper deleteEventsForScheduleGroup:group];
-
-	// Get all schedules that belong to this group and pass them to the alarm processor
-	// for notification.
-	NSMapTable * changedSchedules = [[NSMapTable alloc] init];
-	for (SCLRSchedule* schedule in group.schedules) {
-		[changedSchedules setObject:schedule forKey:schedule];
-	}
-
+	
+	NSMapTable * changedSchedules = [self.dbHelper enableScheduleGroup:groupTag enable:NO];
 	[self.alarmProcessor updateScheduleStates:changedSchedules];
-	
-	return success;
+	return YES;
 }
 
 
@@ -289,22 +219,11 @@
 		return NO; // TODO: This needs to be an IllegalState exception
 	}
 	
-	SCLRScheduleGroup * group = nil;
-	if ([groupTag length] > 0) {
-		group = [self.dbHelper getScheduleGroupByTag:groupTag];
-	} else {
+	if (groupTag.length == 0) {
 		return NO;
 	}
-	
-	if (group == nil) {
-		// Throw appropriate exception
-		return NO;
-	}
-	
-	[self.dbHelper deleteSchedulesByGroup:group];
-	[self.alarmProcessor updateScheduleStates:nil];
 
-	return YES;
+	return [self.dbHelper deleteSchedulesByGroupTag:groupTag];
 }
 
 /**
@@ -318,8 +237,8 @@
 	if (!self.initialized) {
 		return nil; // TODO: This needs to be an IllegalState exception
 	}
-	
-	return [self.dbHelper getScheduleStatesByGroupTag:groupTag];
+
+	return [self.dbHelper getSchedulesByGroupTag:groupTag];
 }
 
 
@@ -363,11 +282,21 @@
 }
 
 - (void)receivedBackgroundFetch {
-	[[SCLRAlarmProcessingUtil sharedInstance] updateScheduleStates:nil appInBackground:YES];
+	// Run this in a serial queue
+	//dispatch_sync(self.refreshScheduleStateQueue, ^{
+		[[SCLRAlarmProcessingUtil sharedInstance] updateScheduleStates:nil appInBackground:YES];
+	//});
 }
 
 - (void)refreshScheduleStates {
-	[[SCLRAlarmProcessingUtil sharedInstance] updateScheduleStates:nil appInBackground:YES];
+	// Run this in a serial queue
+	// After making the library multithread wrt core data, I took this serialization out.
+	// What I noticed was that if there are 5 schedule groups, only 3 seemed to respond when
+	// a refresh is called for all 5. Not yet sure if this is a limitation from the app or
+	// from the library. I'm putting the serialization back in place to test.
+	dispatch_sync(self.refreshScheduleStateQueue, ^{
+		[[SCLRAlarmProcessingUtil sharedInstance] updateScheduleStates:nil appInBackground:YES];
+	});
 }
 
 
@@ -433,7 +362,13 @@
 		return nil; // TODO: This needs to be an IllegalState exception
 	}
 	
-	return [self.alarmProcessor getTimeForNextAlarm];
+	__block NSDate* nextAlarm = nil;
+	
+	//dispatch_sync(self.refreshScheduleStateQueue, ^{
+		nextAlarm = [self.alarmProcessor getTimeForNextAlarm];
+	//});
+	
+	return nextAlarm;
 }
 
 /**
@@ -446,17 +381,23 @@
 		return nil; // TODO: This needs to be an IllegalState exception
 	}
 	
-	if (groupTag == nil) {
-		// System-wide alarm
-		return [self.alarmProcessor getTimeForNextAlarm];
-	} else {
-		SCLREvent* nextEvent = [self.dbHelper getNextEventForGroup:groupTag];
-		if (nextEvent != nil) {
-			return nextEvent.alarmTime;
+	__block NSDate* nextAlarm = nil;
+	
+	//dispatch_sync(self.refreshScheduleStateQueue, ^{
+		if (groupTag == nil) {
+			// System-wide alarm
+			nextAlarm = [self.alarmProcessor getTimeForNextAlarm];
 		} else {
-			return nil;
+			SCLREvent* nextEvent = [self.dbHelper getNextEventForGroup:groupTag];
+			if (nextEvent != nil) {
+				nextAlarm = nextEvent.alarmTime;
+			} else {
+				return nil;
+			}
 		}
-	}
+	//});
+	
+	return nextAlarm;
 }
 
 /***************************
@@ -482,75 +423,6 @@
 		default:
 			return NO;
 	}
-}
-
--(NSArray *)createStartAndStopEvents:(SCLRSchedule *)schedule {
-	// Start event
-	// Adjust startTime to the next occurrence if it happens in the past
-	NSDate *adjustedStartTime = [self getNextAlarmTime:schedule.startTime
-											 repeating:[schedule.repeatType intValue]];
-
-	SCLREvent *startEvent = [SCLREvent getBlankEventInContext:self.dbHelper.managedObjectContext];
-	startEvent.alarmTime = adjustedStartTime;
-	startEvent.state = SCHEDULE_STATE_ON;
-	startEvent.schedule = schedule;
-
-	// Stop event
-/*	NSDate *adjustedStopTime =
-	[self getNextAlarmTime:[schedule.startTime
-							dateByAddingTimeInterval:([schedule.duration intValue] * 60)]
-				 repeating:[schedule.repeatType intValue]]; */
-
-	NSLog(@"Schedule tag = %@, starttime = %@, duration = %d",
-		  schedule.tag, schedule.startTime, [schedule.duration intValue]);
-	
-	NSDate * tempTime = [schedule.startTime dateByAddingTimeInterval:([schedule.duration intValue] * 60)];
-
-	NSDate *adjustedStopTime = [self getNextAlarmTime:tempTime
-											repeating:[schedule.repeatType intValue]];
-
-	
-	SCLREvent *stopEvent = [SCLREvent getBlankEventInContext:self.dbHelper.managedObjectContext];
-	stopEvent.alarmTime = adjustedStopTime;
-	stopEvent.state = SCHEDULE_STATE_OFF;
-	stopEvent.schedule = schedule;
-	
-	NSArray *events = [[NSArray alloc] initWithObjects:startEvent, stopEvent, nil];
-	return events;
-}
-
-
-/**
- * Helper method which takes an input time and returns the very
- * next time that an event occurs given the current time and the repeat type
- */
--(NSDate *)getNextAlarmTime:(NSDate *)timeToAdjust repeating:(int)repeatType {
-	NSDate * currTime = [NSDate date];
-	NSDate * nextAlarmTime = [timeToAdjust copy];
-	
-	while ([nextAlarmTime compare:currTime] == NSOrderedAscending) {
-		switch (repeatType) {
-			case REPEAT_TYPE_HOURLY:
-				nextAlarmTime = [nextAlarmTime dateByAddingTimeInterval:ALARMPROCESSINGUTIL_HOUR_S];
-				break;
-			case REPEAT_TYPE_DAILY:
-				nextAlarmTime = [nextAlarmTime dateByAddingTimeInterval:ALARMPROCESSINGUTIL_DAY_S];
-				break;
-			case REPEAT_TYPE_WEEKLY:
-				nextAlarmTime = [nextAlarmTime dateByAddingTimeInterval:ALARMPROCESSINGUTIL_WEEK_S];
-				break;
-				
-			// Monthly and yearly are inaccurate. We should switch to NSCalendar arithmetic
-			case REPEAT_TYPE_MONTHLY:
-				nextAlarmTime = [nextAlarmTime dateByAddingTimeInterval:ALARMPROCESSINGUTIL_MONTH_S];
-				break;
-			case REPEAT_TYPE_YEARLY:
-				nextAlarmTime = [nextAlarmTime dateByAddingTimeInterval:ALARMPROCESSINGUTIL_YEAR_S];
-				break;
-		}
-	}
-	
-	return nextAlarmTime;
 }
 
 @end
